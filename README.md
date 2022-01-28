@@ -10,7 +10,7 @@ flexibility and runtime. While a number of parallelizations and speed-ups have
 been implemented, we provide generic interfaces to add additional constraints when
 performing route constructions. To get started, we provide a simple best-response
 heuristic for solving the vehicle-trip assignment problem, but we also provide
-interfaces to run the algorithm using **GLPK**, **Cbc**, **Gurobi**, and **CPLEX**.
+interfaces to run the algorithm using the following solvers: **GLPK**, **Cbc**, **Gurobi**, and **CPLEX**.
 
 ## Getting started
 
