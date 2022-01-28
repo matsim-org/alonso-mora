@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.matsim.alonso-mora</groupId>
+	<artifactId>glpk</artifactId>
+
+	<parent>
+		<groupId>org.matsim</groupId>
+		<artifactId>alonso-mora</artifactId>
+		<version>1.0.0</version>
+	</parent>
+
+	<repositories>
+		<repository>
+			<id>xypron</id>
+			<url>https://www.xypron.de/repository/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.gnu.glpk</groupId>
+			<artifactId>glpk-java</artifactId>
+			<version>1.12.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.matsim.alonso-mora</groupId>
+			<artifactId>core</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+	</dependencies>
+</project>
