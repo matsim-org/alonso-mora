@@ -18,9 +18,6 @@ jobs:
           java-version: 11
       - name: Install GLPK and CBC
         run: sudo apt install glpk-utils coinor-cbc libglpk-java
-      - name: Verify and install core
+      - name: Run tests
         working-directory: core
-        run: mvn install --fail-at-end --batch-mode -Dmatsim.preferLocalDtds=true
-      - name: Verify and install glpk
-        working-directory: glpk
-        run: mvn verify --fail-at-end --batch-mode -Dmatsim.preferLocalDtds=true -DargLine="-Djava.library.path=/usr/lib/x86_64-linux-gnu/jni"
+        run: mvn install --projects core,glpk --also-make --fail-at-end --batch-mode -Dmatsim.preferLocalDtds=true -DargLine="-Djava.library.path=/usr/lib/x86_64-linux-gnu/jni"
