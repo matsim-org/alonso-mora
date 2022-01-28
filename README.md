@@ -1,3 +1,5 @@
+# MATSim / Alonso-Mora et al. (2017)
+
 This repository contains an open implementation of the pooled taxi fleet dispatching
 algorithm developed by Alonso-Mora et al. (2017):
 
