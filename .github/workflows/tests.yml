@@ -19,5 +19,4 @@ jobs:
       - name: Install GLPK and CBC
         run: sudo apt install glpk-utils coinor-cbc libglpk-java
       - name: Run tests
-        working-directory: core
         run: mvn install --projects core,glpk --also-make --fail-at-end --batch-mode -Dmatsim.preferLocalDtds=true -DargLine="-Djava.library.path=/usr/lib/x86_64-linux-gnu/jni"
