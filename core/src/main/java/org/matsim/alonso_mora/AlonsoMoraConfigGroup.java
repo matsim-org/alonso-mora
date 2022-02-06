@@ -478,10 +478,10 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 			return solverType;
 		}
 
-		static private final String RUNTIME_THRESHOLD = "runtimeThreshold_ms";
-		static private final String RUNTIME_THRESHOLD_COMMENT = "Defines the runtime threshold of the assignment algorithm [ms]";
+		static private final String RUNTIME_THRESHOLD = "runtimeThreshold_s";
+		static private final String RUNTIME_THRESHOLD_COMMENT = "Defines the runtime threshold of the assignment algorithm [s]";
 
-		private int runtimeThreshold = 3600 * 1000;
+		private int runtimeThreshold = 15;
 
 		@StringGetter(RUNTIME_THRESHOLD)
 		public int getRuntimeThreshold() {

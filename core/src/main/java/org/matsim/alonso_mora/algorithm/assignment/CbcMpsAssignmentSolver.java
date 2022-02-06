@@ -26,7 +26,7 @@ import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Sta
  */
 public class CbcMpsAssignmentSolver implements AssignmentSolver {
 	static public final String TYPE = "CbcMps";
-	
+
 	private final static Logger logger = Logger.getLogger(CbcMpsAssignmentSolver.class);
 
 	private final double rejectionPenalty;
@@ -54,8 +54,8 @@ public class CbcMpsAssignmentSolver implements AssignmentSolver {
 			List<AlonsoMoraTrip> tripList = candidates.collect(Collectors.toList());
 			new MpsAssignmentWriter(tripList, unassignmentPenalty, rejectionPenalty).write(problemPath);
 
-			new ProcessBuilder("cbc", problemPath.toString(), "sec", String.valueOf(1e-3 * timeLimit), "solve",
-					"solution", solutionPath.toString()).start().waitFor();
+			new ProcessBuilder("cbc", problemPath.toString(), "sec", String.valueOf(timeLimit), "solve", "solution",
+					solutionPath.toString()).start().waitFor();
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(solutionPath)));
 

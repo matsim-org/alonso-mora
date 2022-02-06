@@ -26,7 +26,7 @@ import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Sta
  */
 public class GlpkMpsAssignmentSolver implements AssignmentSolver {
 	static public final String TYPE = "GlpkMps";
-	
+
 	private static final Logger logger = Logger.getLogger(GlpkMpsAssignmentSolver.class);
 
 	private final double unassignmentPenalty;
@@ -35,10 +35,10 @@ public class GlpkMpsAssignmentSolver implements AssignmentSolver {
 	private final File problemPath;
 	private final File solutionPath;
 
-	private final int timeLimit;
+	private final double timeLimit;
 
-	public GlpkMpsAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int timeLimit, File problemPath,
-			File solutionPath) {
+	public GlpkMpsAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, double timeLimit,
+			File problemPath, File solutionPath) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 
@@ -54,8 +54,8 @@ public class GlpkMpsAssignmentSolver implements AssignmentSolver {
 			List<AlonsoMoraTrip> tripList = candidates.collect(Collectors.toList());
 			new MpsAssignmentWriter(tripList, unassignmentPenalty, rejectionPenalty).write(problemPath);
 
-			new ProcessBuilder("glpsol", "--tmlim", String.valueOf(timeLimit), "-w", solutionPath.toString(),
-					problemPath.toString()).start().waitFor();
+			new ProcessBuilder("glpsol", "--tmlim", String.valueOf((int) (timeLimit * 1e3)), "-w",
+					solutionPath.toString(), problemPath.toString()).start().waitFor();
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(solutionPath)));
 
