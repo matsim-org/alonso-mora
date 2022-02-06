@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -82,23 +81,6 @@ public class DefaultVehicleGraph implements VehicleGraph {
 
 		if (currentLevelTrips.size() > 0) {
 			constructTrips(currentLevelTrips, 2, now);
-		}
-	}
-
-	@Override
-	public void removeRequest(AlonsoMoraRequest request) {
-		Verify.verify(requests.remove(request), "Request is not registered");
-
-		for (int i = 0; i < trips.size(); i++) {
-			Iterator<AlonsoMoraTrip> tripIterator = trips.get(i).iterator();
-
-			while (tripIterator.hasNext()) {
-				AlonsoMoraTrip trip = tripIterator.next();
-
-				if (trip.getRequests().contains(request)) {
-					tripIterator.remove();
-				}
-			}
 		}
 	}
 
