@@ -35,11 +35,14 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 	private final double rejectionPenalty;
 
 	private final int numberOfThreads;
+	private final double timeLimit;
 
-	public CplexAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads) {
+	public CplexAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads,
+			double timeLimit) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 		this.numberOfThreads = numberOfThreads;
+		this.timeLimit = timeLimit;
 	}
 
 	@Override
@@ -59,6 +62,8 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 			cplex.setParam(IloCplex.Param.Simplex.Display, 0);
 			cplex.setParam(IloCplex.Param.MIP.Display, 0);
 			cplex.setParam(IloCplex.Param.Threads, numberOfThreads);
+			cplex.setParam(IloCplex.Param.TimeLimit, timeLimit);
+			cplex.setParam(IloCplex.Param.ParamDisplay, false);
 
 			// Create variables
 
@@ -160,6 +165,9 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 	static public boolean checkAvailability() {
 		try {
 			IloCplex cplex = new IloCplex();
+			cplex.setParam(IloCplex.Param.MIP.Display, 0);
+			cplex.setParam(IloCplex.Param.Simplex.Display, 0);
+			cplex.setParam(IloCplex.Param.ParamDisplay, false);
 			cplex.getVersionNumber();
 			cplex.close();
 

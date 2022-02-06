@@ -36,12 +36,12 @@ public class GlpkJniAssignmentSolver implements AssignmentSolver {
 
 	private final double unassignmentPenalty;
 	private final double rejectionPenalty;
-	private final int runtimeLimit;
+	private final int timeLimit;
 
-	public GlpkJniAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int runtimeLimit) {
+	public GlpkJniAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int timeLimit) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
-		this.runtimeLimit = runtimeLimit;
+		this.timeLimit = timeLimit;
 	}
 
 	@Override
@@ -165,7 +165,7 @@ public class GlpkJniAssignmentSolver implements AssignmentSolver {
 
 		glp_iocp parameters = new glp_iocp();
 		GLPK.glp_init_iocp(parameters);
-		parameters.setTm_lim(runtimeLimit * 1000);
+		parameters.setTm_lim(timeLimit);
 
 		parameters.setPresolve(GLPK.GLP_ON);
 		GLPK.glp_term_out(GLPK.GLP_OFF);

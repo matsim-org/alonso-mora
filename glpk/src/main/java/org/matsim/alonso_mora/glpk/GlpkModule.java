@@ -7,7 +7,6 @@ import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.core.config.Config;
-import org.matsim.core.config.groups.GlobalConfigGroup;
 
 import com.google.inject.Singleton;
 
@@ -37,10 +36,11 @@ public class GlpkModule extends AbstractDvrpModeQSimModule {
 				throw new IllegalStateException("GLPK JNI solver is not available on this system!");
 			}
 
-			GlobalConfigGroup globalConfig = getter.get(GlobalConfigGroup.class);
+			GlpkJniAssignmentParameters solverParameters = (GlpkJniAssignmentParameters) amConfig
+					.getAssignmentSolverParameters();
 
 			return new GlpkJniAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					globalConfig.getNumberOfThreads());
+					solverParameters.getRuntimeThreshold());
 		})).in(Singleton.class);
 
 		if (amConfig.getAssignmentSolverParameters().getSolverType().equals(GlpkJniAssignmentSolver.TYPE)) {
