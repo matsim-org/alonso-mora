@@ -14,10 +14,8 @@ import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction;
 public interface VehicleGraph {
 
 	void addRequest(AlonsoMoraRequest request, double now);
-	
-	void addRequest(AlonsoMoraRequest request, double now, AlonsoMoraFunction.Result result);
 
-	void removeRequest(AlonsoMoraRequest request);
+	void addRequest(AlonsoMoraRequest request, double now, AlonsoMoraFunction.Result result);
 
 	Stream<AlonsoMoraTrip> stream();
 
