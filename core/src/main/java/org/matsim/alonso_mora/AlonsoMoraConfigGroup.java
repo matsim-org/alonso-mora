@@ -215,7 +215,7 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	private final static String CANDIDATE_VEHICLES_PER_REQUEST_COMMENT = "Limits the number of request-vehicle combinations that are explored when building the trip graph (III.C in paper). If set to 0, no limit is imposed.";
 
 	@PositiveOrZero
-	private int candidateVehiclesPerRequest = 0;
+	private int candidateVehiclesPerRequest = 30;
 
 	@StringGetter(CANDIDATE_VEHICLES_PER_REQUEST)
 	public int getCandidateVehiclesPerRequest() {
