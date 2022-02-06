@@ -38,11 +38,14 @@ public class GurobiAssignmentSolver implements AssignmentSolver {
 	private final double rejectionPenalty;
 
 	private final int numberOfThreads;
+	private final double timeLimit;
 
-	public GurobiAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads) {
+	public GurobiAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads,
+			double timeLimit) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 		this.numberOfThreads = numberOfThreads;
+		this.timeLimit = timeLimit;
 	}
 
 	@Override
@@ -61,6 +64,7 @@ public class GurobiAssignmentSolver implements AssignmentSolver {
 			GRBEnv env = new GRBEnv(true);
 			env.set(GRB.IntParam.LogToConsole, 0);
 			env.set(GRB.IntParam.Threads, numberOfThreads);
+			env.set(GRB.DoubleParam.TimeLimit, timeLimit);
 			env.start();
 
 			GRBModel model = new GRBModel(env);

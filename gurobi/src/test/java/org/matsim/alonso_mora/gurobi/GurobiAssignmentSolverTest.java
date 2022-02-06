@@ -44,7 +44,7 @@ public class GurobiAssignmentSolverTest {
 
 	@Test
 	public void testOneVehicleOneRequestExample() {
-		AssignmentSolver solver = new GurobiAssignmentSolver(9000.0, 9000.0, 1000);
+		AssignmentSolver solver = new GurobiAssignmentSolver(9000.0, 9000.0, 1000, 10.0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -59,7 +59,7 @@ public class GurobiAssignmentSolverTest {
 
 	@Test
 	public void testTwoIndependentRequests() {
-		AssignmentSolver solver = new GurobiAssignmentSolver(9000.0, 9000.0, 1000);
+		AssignmentSolver solver = new GurobiAssignmentSolver(9000.0, 9000.0, 1000, 10.0);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -79,7 +79,7 @@ public class GurobiAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicle() {
-		AssignmentSolver solver = new GurobiAssignmentSolver(9000.0, 9000.0, 1000);
+		AssignmentSolver solver = new GurobiAssignmentSolver(9000.0, 9000.0, 1000, 10.0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -103,7 +103,7 @@ public class GurobiAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicleLowPenalty() {
-		AssignmentSolver solver = new GurobiAssignmentSolver(250.0, 250.0, 1000);
+		AssignmentSolver solver = new GurobiAssignmentSolver(250.0, 250.0, 1000, 10.0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();

@@ -35,8 +35,11 @@ public class GurobiModule extends AbstractDvrpModeQSimModule {
 		bindModal(GurobiAssignmentSolver.class).toProvider(modalProvider(getter -> {
 			GlobalConfigGroup globalConfig = getter.get(GlobalConfigGroup.class);
 
+			GurobiAssignmentParameters solverParameters = (GurobiAssignmentParameters) amConfig
+					.getAssignmentSolverParameters();
+
 			return new GurobiAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					globalConfig.getNumberOfThreads());
+					globalConfig.getNumberOfThreads(), solverParameters.getRuntimeThreshold() * 1e-3);
 		})).in(Singleton.class);
 
 		if (amConfig.getAssignmentSolverParameters().getSolverType().equals(GurobiAssignmentSolver.TYPE)) {
