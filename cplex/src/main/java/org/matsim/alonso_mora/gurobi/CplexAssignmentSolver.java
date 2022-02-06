@@ -36,13 +36,15 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 
 	private final int numberOfThreads;
 	private final double timeLimit;
+	private final double optimalityGap;
 
 	public CplexAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads,
-			double timeLimit) {
+			double timeLimit, double optimalityGap) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 		this.numberOfThreads = numberOfThreads;
 		this.timeLimit = timeLimit;
+		this.optimalityGap = optimalityGap;
 	}
 
 	@Override
@@ -64,6 +66,7 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 			cplex.setParam(IloCplex.Param.Threads, numberOfThreads);
 			cplex.setParam(IloCplex.Param.TimeLimit, timeLimit);
 			cplex.setParam(IloCplex.Param.ParamDisplay, false);
+			cplex.setParam(IloCplex.Param.MIP.Tolerances.MIPGap, optimalityGap);
 
 			// Create variables
 

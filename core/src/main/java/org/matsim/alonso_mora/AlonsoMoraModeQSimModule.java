@@ -128,7 +128,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					.getAssignmentSolverParameters();
 
 			return new CbcMpsAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getRuntimeThreshold(), problemPath, solutionPath);
+					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath,
+					solutionPath);
 		})).in(Singleton.class);
 
 		bindModal(GlpkMpsAssignmentSolver.class).toProvider(modalProvider(getter -> {
@@ -144,7 +145,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					.getAssignmentSolverParameters();
 
 			return new GlpkMpsAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getRuntimeThreshold(), problemPath, solutionPath);
+					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath,
+					solutionPath);
 		})).in(Singleton.class);
 
 		switch (amConfig.getAssignmentSolverParameters().getSolverType()) {

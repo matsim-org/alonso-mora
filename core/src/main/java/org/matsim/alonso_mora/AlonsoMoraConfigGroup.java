@@ -514,25 +514,41 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 			return solverType;
 		}
 
-		static private final String RUNTIME_THRESHOLD = "runtimeThreshold_s";
-		static private final String RUNTIME_THRESHOLD_COMMENT = "Defines the runtime threshold of the assignment algorithm [s]";
+		static private final String TIME_LIMIT = "timeLimit_s";
+		static private final String TIME_LIMIT_COMMENT = "Defines the runtime threshold of the assignment algorithm [s]";
 
-		private int runtimeThreshold = 15;
+		private double timeLimit = 15;
 
-		@StringGetter(RUNTIME_THRESHOLD)
-		public int getRuntimeThreshold() {
-			return runtimeThreshold;
+		@StringGetter(TIME_LIMIT)
+		public double getTimeLimit() {
+			return timeLimit;
 		}
 
-		@StringSetter(RUNTIME_THRESHOLD)
-		public void setRuntimeThreshold(int value) {
-			this.runtimeThreshold = value;
+		@StringSetter(TIME_LIMIT)
+		public void setTimeLimit(double value) {
+			this.timeLimit = value;
+		}
+
+		static private final String OPTIMALITY_GAP = "optimalityGap";
+		static private final String OPTIMALITY_GAP_COMMENT = "Defines the optimality gap for the algorithm";
+
+		private double optimalityGap = 0.1;
+
+		@StringGetter(OPTIMALITY_GAP)
+		public double getOptimalityGap() {
+			return optimalityGap;
+		}
+
+		@StringSetter(OPTIMALITY_GAP)
+		public void setOptimalityGap(double value) {
+			this.optimalityGap = value;
 		}
 
 		@Override
 		public Map<String, String> getComments() {
 			Map<String, String> comments = super.getComments();
-			comments.put(RUNTIME_THRESHOLD, RUNTIME_THRESHOLD_COMMENT);
+			comments.put(TIME_LIMIT, TIME_LIMIT_COMMENT);
+			comments.put(OPTIMALITY_GAP, OPTIMALITY_GAP_COMMENT);
 			return comments;
 		}
 	}

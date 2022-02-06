@@ -49,8 +49,8 @@ public class GlpkMpsAssignmentSolverTest {
 
 	@Test
 	public void testOneVehicleOneRequestExample() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, temporaryFolder.newFile("problem"),
-				temporaryFolder.newFile("solution"));
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -65,8 +65,8 @@ public class GlpkMpsAssignmentSolverTest {
 
 	@Test
 	public void testTwoIndependentRequests() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, temporaryFolder.newFile("problem"),
-				temporaryFolder.newFile("solution"));
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -86,8 +86,8 @@ public class GlpkMpsAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicle() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, temporaryFolder.newFile("problem"),
-				temporaryFolder.newFile("solution"));
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -111,8 +111,8 @@ public class GlpkMpsAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicleLowPenalty() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(250.0, 250.0, 1000, temporaryFolder.newFile("problem"),
-				temporaryFolder.newFile("solution"));
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(250.0, 250.0, 1000, 0.1,
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();

@@ -36,9 +36,10 @@ public class GlpkMpsAssignmentSolver implements AssignmentSolver {
 	private final File solutionPath;
 
 	private final double timeLimit;
+	private final double optimalityGap;
 
 	public GlpkMpsAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, double timeLimit,
-			File problemPath, File solutionPath) {
+			double optimalityGap, File problemPath, File solutionPath) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 
@@ -46,6 +47,7 @@ public class GlpkMpsAssignmentSolver implements AssignmentSolver {
 		this.solutionPath = solutionPath;
 
 		this.timeLimit = timeLimit;
+		this.optimalityGap = optimalityGap;
 	}
 
 	@Override
@@ -54,8 +56,9 @@ public class GlpkMpsAssignmentSolver implements AssignmentSolver {
 			List<AlonsoMoraTrip> tripList = candidates.collect(Collectors.toList());
 			new MpsAssignmentWriter(tripList, unassignmentPenalty, rejectionPenalty).write(problemPath);
 
-			new ProcessBuilder("glpsol", "--tmlim", String.valueOf((int) (timeLimit * 1e3)), "-w",
-					solutionPath.toString(), problemPath.toString()).start().waitFor();
+			new ProcessBuilder("glpsol", "--mipgap", String.valueOf(optimalityGap), "--tmlim",
+					String.valueOf((int) (timeLimit * 1e3)), "-w", solutionPath.toString(), problemPath.toString())
+							.start().waitFor();
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(solutionPath)));
 

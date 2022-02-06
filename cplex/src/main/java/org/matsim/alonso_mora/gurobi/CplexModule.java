@@ -39,7 +39,8 @@ public class CplexModule extends AbstractDvrpModeQSimModule {
 					.getAssignmentSolverParameters();
 
 			return new CplexAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					globalConfig.getNumberOfThreads(), solverParameters.getRuntimeThreshold());
+					globalConfig.getNumberOfThreads(), solverParameters.getTimeLimit(),
+					solverParameters.getOptimalityGap());
 		})).in(Singleton.class);
 
 		if (amConfig.getAssignmentSolverParameters().getSolverType().equals(CplexAssignmentSolver.TYPE)) {
