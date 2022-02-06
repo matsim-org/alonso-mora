@@ -6,9 +6,10 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.matsim.alonso_mora.algorithm.assignment.BestResponseAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.CbcMpsAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyTripFirstSolver;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyVehicleFirstSolver;
 import org.matsim.alonso_mora.algorithm.relocation.BestResponseRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.CbcMpsRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.GlpkMpsRelocationSolver;
@@ -569,7 +570,9 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	private final Map<String, Supplier<TravelTimeEstimatorParameters>> availableTravelTimeEstimators = new HashMap<>();
 
 	private void prepareAvailableComponents() {
-		availableAssignmentSolvers.put(BestResponseAssignmentSolver.TYPE, () -> new BestResponseAssignmentParameters());
+		availableAssignmentSolvers.put(GreedyTripFirstSolver.TYPE, () -> new GreedyTripFirstAssignmentParameters());
+		availableAssignmentSolvers.put(GreedyVehicleFirstSolver.TYPE,
+				() -> new GreedyVehicleFirstAssignmentParameters());
 		availableAssignmentSolvers.put(CbcMpsAssignmentSolver.TYPE, () -> new CbcMpsAssignmentParameters());
 		availableAssignmentSolvers.put(GlpkMpsAssignmentSolver.TYPE, () -> new GlpkMpsAssignmentParameters());
 
@@ -585,7 +588,7 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	}
 
 	private void prepareDefaultComponents() {
-		super.addParameterSet(new BestResponseAssignmentParameters());
+		super.addParameterSet(new GreedyTripFirstAssignmentParameters());
 		super.addParameterSet(new BestResponseRelocationParameters());
 		super.addParameterSet(new EuclideanEstimatorParameters());
 		super.addParameterSet(new CongestionMitigationParameters());
@@ -660,9 +663,15 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 
 	/* Assignment parameters */
 
-	public static class BestResponseAssignmentParameters extends AssignmentSolverParameters {
-		public BestResponseAssignmentParameters() {
-			super(BestResponseAssignmentSolver.TYPE);
+	public static class GreedyTripFirstAssignmentParameters extends AssignmentSolverParameters {
+		public GreedyTripFirstAssignmentParameters() {
+			super(GreedyTripFirstSolver.TYPE);
+		}
+	}
+
+	public static class GreedyVehicleFirstAssignmentParameters extends AssignmentSolverParameters {
+		public GreedyVehicleFirstAssignmentParameters() {
+			super(GreedyVehicleFirstSolver.TYPE);
 		}
 	}
 

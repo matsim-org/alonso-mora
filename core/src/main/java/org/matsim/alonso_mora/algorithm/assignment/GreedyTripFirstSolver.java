@@ -21,8 +21,8 @@ import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Sta
  * 
  * @author sebhoerl
  */
-public class BestResponseAssignmentSolver implements AssignmentSolver {
-	static public final String TYPE = "BestResponse";
+public class GreedyTripFirstSolver implements AssignmentSolver {
+	static public final String TYPE = "GreedyTripFirst";
 	
 	static private class TripComparator implements Comparator<AlonsoMoraTrip> {
 		@Override

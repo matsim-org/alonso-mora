@@ -18,9 +18,10 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicleFactory;
 import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraRequestFactory;
 import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
-import org.matsim.alonso_mora.algorithm.assignment.BestResponseAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.CbcMpsAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyTripFirstSolver;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyVehicleFirstSolver;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.Constraint;
@@ -106,8 +107,12 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			}
 		}));
 
-		bindModal(BestResponseAssignmentSolver.class).toProvider(modalProvider(getter -> {
-			return new BestResponseAssignmentSolver();
+		bindModal(GreedyTripFirstSolver.class).toProvider(modalProvider(getter -> {
+			return new GreedyTripFirstSolver();
+		})).in(Singleton.class);
+
+		bindModal(GreedyVehicleFirstSolver.class).toProvider(modalProvider(getter -> {
+			return new GreedyVehicleFirstSolver();
 		})).in(Singleton.class);
 
 		bindModal(CbcMpsAssignmentSolver.class).toProvider(modalProvider(getter -> {
@@ -143,8 +148,11 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		})).in(Singleton.class);
 
 		switch (amConfig.getAssignmentSolverParameters().getSolverType()) {
-		case BestResponseAssignmentSolver.TYPE:
-			bindModal(AssignmentSolver.class).to(modalKey(BestResponseAssignmentSolver.class));
+		case GreedyTripFirstSolver.TYPE:
+			bindModal(AssignmentSolver.class).to(modalKey(GreedyTripFirstSolver.class));
+			break;
+		case GreedyVehicleFirstSolver.TYPE:
+			bindModal(AssignmentSolver.class).to(modalKey(GreedyVehicleFirstSolver.class));
 			break;
 		case CbcMpsAssignmentSolver.TYPE:
 			bindModal(AssignmentSolver.class).to(modalKey(CbcMpsAssignmentSolver.class));

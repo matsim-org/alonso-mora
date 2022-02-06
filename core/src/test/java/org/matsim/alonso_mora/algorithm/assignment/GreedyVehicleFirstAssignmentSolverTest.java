@@ -10,15 +10,22 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction.Result;
+import org.matsim.api.core.v01.Id;
+import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.mockito.Mockito;
 
-public class BestResponseAssignmentSolverTest {
+public class GreedyVehicleFirstAssignmentSolverTest {
 	private AlonsoMoraRequest mockRequest() {
 		return Mockito.mock(AlonsoMoraRequest.class);
 	}
 
-	private AlonsoMoraVehicle mockVehicle() {
-		return Mockito.mock(AlonsoMoraVehicle.class);
+	private AlonsoMoraVehicle mockVehicle(int index) {
+		AlonsoMoraVehicle vehicle = Mockito.mock(AlonsoMoraVehicle.class);
+		DvrpVehicle dvrpVehicle = Mockito.mock(DvrpVehicle.class);
+		Id<DvrpVehicle> vehicleId = Id.create(index, DvrpVehicle.class);
+		Mockito.when(dvrpVehicle.getId()).thenReturn(vehicleId);
+		Mockito.when(vehicle.getVehicle()).thenReturn(dvrpVehicle);
+		return vehicle;
 	}
 
 	private AlonsoMoraTrip mockTrip(AlonsoMoraVehicle vehicle, double cost, AlonsoMoraRequest... requests) {
@@ -36,9 +43,9 @@ public class BestResponseAssignmentSolverTest {
 
 	@Test
 	public void testOneVehicleOneRequestExample() {
-		AssignmentSolver solver = new BestResponseAssignmentSolver();
+		AssignmentSolver solver = new GreedyVehicleFirstSolver();
 
-		AlonsoMoraVehicle vehicle = mockVehicle();
+		AlonsoMoraVehicle vehicle = mockVehicle(0);
 		AlonsoMoraRequest request = mockRequest();
 		AlonsoMoraTrip trip = mockTrip(vehicle, 100.0, request);
 
@@ -51,13 +58,13 @@ public class BestResponseAssignmentSolverTest {
 
 	@Test
 	public void testTwoIndependentRequests() {
-		AssignmentSolver solver = new BestResponseAssignmentSolver();
+		AssignmentSolver solver = new GreedyVehicleFirstSolver();
 
-		AlonsoMoraVehicle vehicle1 = mockVehicle();
+		AlonsoMoraVehicle vehicle1 = mockVehicle(1);
 		AlonsoMoraRequest request1 = mockRequest();
 		AlonsoMoraTrip trip1 = mockTrip(vehicle1, 100.0, request1);
 
-		AlonsoMoraVehicle vehicle2 = mockVehicle();
+		AlonsoMoraVehicle vehicle2 = mockVehicle(2);
 		AlonsoMoraRequest request2 = mockRequest();
 		AlonsoMoraTrip trip2 = mockTrip(vehicle2, 200.0, request2);
 
@@ -71,9 +78,9 @@ public class BestResponseAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicle() {
-		AssignmentSolver solver = new BestResponseAssignmentSolver();
+		AssignmentSolver solver = new GreedyVehicleFirstSolver();
 
-		AlonsoMoraVehicle vehicle = mockVehicle();
+		AlonsoMoraVehicle vehicle = mockVehicle(0);
 		AlonsoMoraRequest request1 = mockRequest();
 		AlonsoMoraRequest request2 = mockRequest();
 
@@ -116,10 +123,10 @@ public class BestResponseAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithTwoVehicles() {
-		AssignmentSolver solver = new BestResponseAssignmentSolver();
+		AssignmentSolver solver = new GreedyVehicleFirstSolver();
 
-		AlonsoMoraVehicle vehicle1 = mockVehicle();
-		AlonsoMoraVehicle vehicle2 = mockVehicle();
+		AlonsoMoraVehicle vehicle1 = mockVehicle(1);
+		AlonsoMoraVehicle vehicle2 = mockVehicle(2);
 
 		AlonsoMoraRequest request1 = mockRequest();
 		AlonsoMoraRequest request2 = mockRequest();
