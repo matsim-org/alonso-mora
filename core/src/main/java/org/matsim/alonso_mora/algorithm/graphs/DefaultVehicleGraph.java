@@ -35,10 +35,18 @@ public class DefaultVehicleGraph implements VehicleGraph {
 	private final List<List<AlonsoMoraTrip>> trips = new ArrayList<>();
 	private final Set<AlonsoMoraRequest> requests = new HashSet<>();
 
-	public DefaultVehicleGraph(AlonsoMoraFunction function, RequestGraph requestGraph, AlonsoMoraVehicle vehicle) {
+	private final int tripLimitPerVehicle;
+	private final int tripLimitPerSequenceLength;
+
+	private int numberOfTrips = 0;
+
+	public DefaultVehicleGraph(AlonsoMoraFunction function, RequestGraph requestGraph, AlonsoMoraVehicle vehicle,
+			int tripLimitPerVehicle, int tripLimitPerSequenceLength) {
 		this.vehicle = vehicle;
 		this.requestGraph = requestGraph;
 		this.function = function;
+		this.tripLimitPerVehicle = tripLimitPerVehicle;
+		this.tripLimitPerSequenceLength = tripLimitPerSequenceLength;
 
 		ensureTripListSize(vehicle.getVehicle().getCapacity() * 2);
 	}
@@ -63,10 +71,22 @@ public class DefaultVehicleGraph implements VehicleGraph {
 	public void addRequest(AlonsoMoraRequest request, double now, AlonsoMoraFunction.Result unpooledResult) {
 		Verify.verify(requests.add(request), "Request is already registered");
 
-		trips.get(0).add(new AlonsoMoraTrip(vehicle, Arrays.asList(request), unpooledResult));
+		if (tripLimitPerVehicle > 0 && numberOfTrips >= tripLimitPerVehicle) {
+			return; // Limit has been reached
+		}
+
+		if (!(tripLimitPerSequenceLength > 0 && trips.get(0).size() >= tripLimitPerSequenceLength)) {
+			// Limit has not been reached
+			trips.get(0).add(new AlonsoMoraTrip(vehicle, Arrays.asList(request), unpooledResult));
+		}
+
 		List<AlonsoMoraTrip> currentLevelTrips = new LinkedList<>();
 
 		for (AlonsoMoraRequest pairableRequest : requestGraph.getShareableRequests(request)) {
+			if (tripLimitPerSequenceLength > 0 && trips.get(1).size() >= tripLimitPerSequenceLength) {
+				break; // Limit has been reached
+			}
+
 			if (requests.contains(pairableRequest)) {
 				Optional<AlonsoMoraFunction.Result> pairedResult = function
 						.calculateRoute(Arrays.asList(request, pairableRequest), vehicle, now);
@@ -109,6 +129,10 @@ public class DefaultVehicleGraph implements VehicleGraph {
 
 		for (int i = 0; i < previousLevelTrips.size(); i++) {
 			for (int j = i + 1; j < previousLevelTrips.size(); j++) {
+				if (tripLimitPerSequenceLength > 0 && trips.get(level).size() >= tripLimitPerSequenceLength) {
+					break; // Limit has been reached
+				}
+
 				AlonsoMoraTrip firstTrip = previousLevelTrips.get(i);
 				AlonsoMoraTrip secondTrip = previousLevelTrips.get(j);
 

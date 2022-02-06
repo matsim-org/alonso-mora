@@ -242,6 +242,8 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 		comments.put(INSERTION_START_OCCUPANCY, INSERTION_START_OCCUPANCY_COMMENT);
 		comments.put(RELOCATION_INTERVAL, RELOCATION_INTERVAL_COMMENT);
 		comments.put(USE_BINDING_RELOCATIONS, USE_BINDING_RELOCATIONS_COMMENT);
+		comments.put(TRIP_GRAPH_LIMIT_PER_VEHICLE, TRIP_GRAPH_LIMIT_PER_VEHICLE_COMMENT);
+		comments.put(TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH, TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH_COMMENT);
 		comments.put(ASSIGNMENT_INTERVAL, ASSIGNMENT_INTERVAL_COMMENT);
 		comments.put(REJECTION_PENALTY, REJECTION_PENALTY_COMMENT);
 		comments.put(UNASSIGNMENT_PENALTY, UNASSIGNMENT_PENALTY_COMMENT);
@@ -460,6 +462,40 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	@StringSetter(USE_BINDING_RELOCATIONS)
 	public void setUseBindingRelocations(boolean value) {
 		this.useBindingRelocations = value;
+	}
+
+	/* Graph limits */
+
+	static private final String TRIP_GRAPH_LIMIT_PER_VEHICLE = "tripGraphLimitPerVehicle";
+	static private final String TRIP_GRAPH_LIMIT_PER_VEHICLE_COMMENT = "Limits the total number of edges in the trip-vehicle graph per vehicle (0 = no limit)";
+
+	@PositiveOrZero
+	private int tripGraphLimitPerVehicle = 0;
+
+	@StringGetter(TRIP_GRAPH_LIMIT_PER_VEHICLE)
+	public int getTripGraphLimitPerVehicle() {
+		return tripGraphLimitPerVehicle;
+	}
+
+	@StringSetter(TRIP_GRAPH_LIMIT_PER_VEHICLE)
+	public void setTripGraphLimitPerVehicle(int value) {
+		this.tripGraphLimitPerVehicle = value;
+	}
+
+	static private final String TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH = "tripGraphLimitPerSequenceLength";
+	static private final String TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH_COMMENT = "Limits the total number of edges in the trip-vehicle graph for each occupancy level per vehicle (0 = no limit)";
+
+	@PositiveOrZero
+	private int tripGraphLimitPerSequenceLength = 0;
+
+	@StringGetter(TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH)
+	public int getTripGraphLimitPerSequenceLength() {
+		return tripGraphLimitPerSequenceLength;
+	}
+
+	@StringSetter(TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH)
+	public void setTripGraphLimitPerSequenceLength(int value) {
+		this.tripGraphLimitPerSequenceLength = value;
 	}
 
 	/* Block handling */
