@@ -13,6 +13,7 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Status;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyVehicleFirstSolver;
 
 import gurobi.GRB;
 import gurobi.GRBEnv;
@@ -135,6 +136,27 @@ public class GurobiAssignmentSolver implements AssignmentSolver {
 			}
 
 			model.setObjective(objective, GRB.MINIMIZE);
+
+			{ // Find heuristic solution and implement
+				GreedyVehicleFirstSolver heuristicSolver = new GreedyVehicleFirstSolver();
+				Solution heuristicSolution = heuristicSolver.solve(tripList.stream());
+
+				for (int i = 0; i < requestList.size(); i++) {
+					requestVariables.get(i).set(GRB.DoubleAttr.Start, 1.0);
+				}
+
+				for (int i = 0; i < tripList.size(); i++) {
+					tripVariables.get(i).set(GRB.DoubleAttr.Start, 0.0);
+				}
+
+				for (AlonsoMoraTrip trip : heuristicSolution.trips) {
+					tripVariables.get(tripList.indexOf(trip)).set(GRB.DoubleAttr.Start, 1.0);
+
+					for (AlonsoMoraRequest request : trip.getRequests()) {
+						requestVariables.get(requestList.indexOf(request)).set(GRB.DoubleAttr.Start, 0.0);
+					}
+				}
+			}
 
 			// Start optimization
 			model.optimize();
