@@ -13,11 +13,13 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Status;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyVehicleFirstSolver;
 
 import ilog.concert.IloException;
 import ilog.concert.IloIntVar;
 import ilog.concert.IloLinearIntExpr;
 import ilog.concert.IloLinearNumExpr;
+import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
 
 /**
@@ -36,13 +38,15 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 
 	private final int numberOfThreads;
 	private final double timeLimit;
+	private final double optimalityGap;
 
 	public CplexAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads,
-			double timeLimit) {
+			double timeLimit, double optimalityGap) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 		this.numberOfThreads = numberOfThreads;
 		this.timeLimit = timeLimit;
+		this.optimalityGap = optimalityGap;
 	}
 
 	@Override
@@ -64,6 +68,7 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 			cplex.setParam(IloCplex.Param.Threads, numberOfThreads);
 			cplex.setParam(IloCplex.Param.TimeLimit, timeLimit);
 			cplex.setParam(IloCplex.Param.ParamDisplay, false);
+			cplex.setParam(IloCplex.Param.MIP.Tolerances.MIPGap, optimalityGap);
 
 			// Create variables
 
@@ -128,6 +133,36 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 			}
 
 			cplex.addMinimize(objective);
+
+			{ // Find heuristic solution and implement
+				GreedyVehicleFirstSolver heuristicSolver = new GreedyVehicleFirstSolver();
+				Solution heuristicSolution = heuristicSolver.solve(tripList.stream());
+
+				IloNumVar[] startVariables = new IloNumVar[requestList.size() + tripList.size()];
+				double[] startValues = new double[requestList.size() + tripList.size()];
+
+				for (int i = 0; i < requestList.size(); i++) {
+					startVariables[i] = requestVariables.get(i);
+					startValues[i] = 1.0;
+				}
+
+				for (int i = 0; i < tripList.size(); i++) {
+					startVariables[i + requestList.size()] = tripVariables.get(i);
+					startValues[i + requestList.size()] = 0.0;
+				}
+
+				for (AlonsoMoraTrip trip : heuristicSolution.trips) {
+					int tripIndex = tripList.indexOf(trip);
+					startValues[tripIndex + requestList.size()] = 1.0;
+
+					for (AlonsoMoraRequest request : trip.getRequests()) {
+						int requestIndex = requestList.indexOf(request);
+						startValues[requestIndex] = 0.0;
+					}
+				}
+
+				cplex.addMIPStart(startVariables, startValues);
+			}
 
 			// Start optimization
 			cplex.solve();

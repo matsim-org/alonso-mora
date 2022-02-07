@@ -39,7 +39,7 @@ public class DefaultVehicleGraphTest {
 
 		MockRequestGraph requestGraph = new MockRequestGraph();
 
-		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle());
+		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle(), 0, 0);
 		graph.addRequest(request1, 0.0);
 
 		List<AlonsoMoraTrip> trips = graph.stream().collect(Collectors.toList());
@@ -64,7 +64,7 @@ public class DefaultVehicleGraphTest {
 		MockRequestGraph requestGraph = new MockRequestGraph();
 		requestGraph.add(request1, request2);
 
-		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle());
+		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle(), 0, 0);
 		graph.addRequest(request1, 0.0);
 		graph.addRequest(request2, 0.0);
 
@@ -90,7 +90,7 @@ public class DefaultVehicleGraphTest {
 
 		MockRequestGraph requestGraph = new MockRequestGraph();
 
-		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle());
+		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle(), 0, 0);
 		graph.addRequest(request1, 0.0);
 		graph.addRequest(request2, 0.0);
 
@@ -129,7 +129,7 @@ public class DefaultVehicleGraphTest {
 		requestGraph.add(request3, request5);
 		requestGraph.add(request4, request5);
 
-		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle());
+		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle(), 0, 0);
 		graph.addRequest(request1, 0.0);
 		graph.addRequest(request2, 0.0);
 		graph.addRequest(request3, 0.0);
@@ -174,7 +174,7 @@ public class DefaultVehicleGraphTest {
 		requestGraph.add(request3, request5);
 		requestGraph.add(request4, request5);
 
-		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle());
+		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle(), 0, 0);
 		graph.addRequest(request1, 0.0);
 		graph.addRequest(request2, 0.0);
 		graph.addRequest(request3, 0.0);
@@ -226,7 +226,7 @@ public class DefaultVehicleGraphTest {
 		requestGraph.add(request6, request4);
 		requestGraph.add(request6, request5);
 
-		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle());
+		VehicleGraph graph = new DefaultVehicleGraph(mockFunction, requestGraph, mockVehicle(), 0, 0);
 		graph.addRequest(request1, 0.0);
 		graph.addRequest(request2, 0.0);
 		graph.addRequest(request3, 0.0);

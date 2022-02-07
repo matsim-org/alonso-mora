@@ -40,7 +40,7 @@ public class GlpkModule extends AbstractDvrpModeQSimModule {
 					.getAssignmentSolverParameters();
 
 			return new GlpkJniAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getRuntimeThreshold());
+					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap());
 		})).in(Singleton.class);
 
 		if (amConfig.getAssignmentSolverParameters().getSolverType().equals(GlpkJniAssignmentSolver.TYPE)) {

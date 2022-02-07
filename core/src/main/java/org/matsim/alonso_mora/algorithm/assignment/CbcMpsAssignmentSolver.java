@@ -26,7 +26,7 @@ import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Sta
  */
 public class CbcMpsAssignmentSolver implements AssignmentSolver {
 	static public final String TYPE = "CbcMps";
-	
+
 	private final static Logger logger = Logger.getLogger(CbcMpsAssignmentSolver.class);
 
 	private final double rejectionPenalty;
@@ -35,10 +35,11 @@ public class CbcMpsAssignmentSolver implements AssignmentSolver {
 	private final File problemPath;
 	private final File solutionPath;
 
-	private final int timeLimit;
+	private final double timeLimit;
+	private final double optimalityGap;
 
-	public CbcMpsAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int timeLimit, File problemPath,
-			File solutionPath) {
+	public CbcMpsAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, double timeLimit,
+			double optimalityGap, File problemPath, File solutionPath) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 
@@ -46,6 +47,7 @@ public class CbcMpsAssignmentSolver implements AssignmentSolver {
 		this.solutionPath = solutionPath;
 
 		this.timeLimit = timeLimit;
+		this.optimalityGap = optimalityGap;
 	}
 
 	@Override
@@ -54,8 +56,8 @@ public class CbcMpsAssignmentSolver implements AssignmentSolver {
 			List<AlonsoMoraTrip> tripList = candidates.collect(Collectors.toList());
 			new MpsAssignmentWriter(tripList, unassignmentPenalty, rejectionPenalty).write(problemPath);
 
-			new ProcessBuilder("cbc", problemPath.toString(), "sec", String.valueOf(1e-3 * timeLimit), "solve",
-					"solution", solutionPath.toString()).start().waitFor();
+			new ProcessBuilder("cbc", problemPath.toString(), "ratio", String.valueOf(optimalityGap), "sec",
+					String.valueOf(timeLimit), "solve", "solution", solutionPath.toString()).start().waitFor();
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(solutionPath)));
 

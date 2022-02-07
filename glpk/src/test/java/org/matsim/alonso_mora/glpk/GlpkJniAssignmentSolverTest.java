@@ -44,7 +44,7 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testOneVehicleOneRequestExample() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -59,7 +59,7 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testTwoIndependentRequests() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -79,7 +79,7 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicle() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -103,7 +103,7 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicleLowPenalty() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(250.0, 250.0, 1000);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(250.0, 250.0, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();

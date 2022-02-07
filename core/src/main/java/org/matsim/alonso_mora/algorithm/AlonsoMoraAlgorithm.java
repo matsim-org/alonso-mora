@@ -281,7 +281,8 @@ public class AlonsoMoraAlgorithm {
 				continue; // Don't create a graph for relocating vehicles if desired
 			}
 
-			vehicleGraphs.put(vehicle, new DefaultVehicleGraph(function, requestGraph, vehicle));
+			vehicleGraphs.put(vehicle, new DefaultVehicleGraph(function, requestGraph, vehicle,
+					settings.tripGraphLimitPerVehicle, settings.tripGraphlimitPerSequenceLength));
 		}
 
 		// Update timings along the current route in order to calculate delays
@@ -731,6 +732,8 @@ public class AlonsoMoraAlgorithm {
 		final boolean allowBareReassignment;
 		final double loggingInterval;
 		final int candidateVehiclesPerRequest;
+		final int tripGraphLimitPerVehicle;
+		final int tripGraphlimitPerSequenceLength;
 
 		public AlgorithmSettings(AlonsoMoraConfigGroup config) {
 			this.useBindingRelocations = config.getUseBindingRelocations();
@@ -742,6 +745,8 @@ public class AlonsoMoraAlgorithm {
 			this.allowBareReassignment = config.getCongestionMitigationParameters().getAllowBareReassignment();
 			this.loggingInterval = config.getLoggingInterval();
 			this.candidateVehiclesPerRequest = config.getCandidateVehiclesPerRequest();
+			this.tripGraphLimitPerVehicle = config.getTripGraphLimitPerVehicle();
+			this.tripGraphlimitPerSequenceLength = config.getTripGraphLimitPerSequenceLength();
 		}
 	}
 

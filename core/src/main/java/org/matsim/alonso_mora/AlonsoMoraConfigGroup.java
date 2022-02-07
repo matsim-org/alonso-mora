@@ -6,9 +6,10 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.matsim.alonso_mora.algorithm.assignment.BestResponseAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.CbcMpsAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyTripFirstSolver;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyVehicleFirstSolver;
 import org.matsim.alonso_mora.algorithm.relocation.BestResponseRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.CbcMpsRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.GlpkMpsRelocationSolver;
@@ -214,7 +215,7 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	private final static String CANDIDATE_VEHICLES_PER_REQUEST_COMMENT = "Limits the number of request-vehicle combinations that are explored when building the trip graph (III.C in paper). If set to 0, no limit is imposed.";
 
 	@PositiveOrZero
-	private int candidateVehiclesPerRequest = 0;
+	private int candidateVehiclesPerRequest = 30;
 
 	@StringGetter(CANDIDATE_VEHICLES_PER_REQUEST)
 	public int getCandidateVehiclesPerRequest() {
@@ -241,6 +242,8 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 		comments.put(INSERTION_START_OCCUPANCY, INSERTION_START_OCCUPANCY_COMMENT);
 		comments.put(RELOCATION_INTERVAL, RELOCATION_INTERVAL_COMMENT);
 		comments.put(USE_BINDING_RELOCATIONS, USE_BINDING_RELOCATIONS_COMMENT);
+		comments.put(TRIP_GRAPH_LIMIT_PER_VEHICLE, TRIP_GRAPH_LIMIT_PER_VEHICLE_COMMENT);
+		comments.put(TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH, TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH_COMMENT);
 		comments.put(ASSIGNMENT_INTERVAL, ASSIGNMENT_INTERVAL_COMMENT);
 		comments.put(REJECTION_PENALTY, REJECTION_PENALTY_COMMENT);
 		comments.put(UNASSIGNMENT_PENALTY, UNASSIGNMENT_PENALTY_COMMENT);
@@ -461,6 +464,40 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 		this.useBindingRelocations = value;
 	}
 
+	/* Graph limits */
+
+	static private final String TRIP_GRAPH_LIMIT_PER_VEHICLE = "tripGraphLimitPerVehicle";
+	static private final String TRIP_GRAPH_LIMIT_PER_VEHICLE_COMMENT = "Limits the total number of edges in the trip-vehicle graph per vehicle (0 = no limit)";
+
+	@PositiveOrZero
+	private int tripGraphLimitPerVehicle = 0;
+
+	@StringGetter(TRIP_GRAPH_LIMIT_PER_VEHICLE)
+	public int getTripGraphLimitPerVehicle() {
+		return tripGraphLimitPerVehicle;
+	}
+
+	@StringSetter(TRIP_GRAPH_LIMIT_PER_VEHICLE)
+	public void setTripGraphLimitPerVehicle(int value) {
+		this.tripGraphLimitPerVehicle = value;
+	}
+
+	static private final String TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH = "tripGraphLimitPerSequenceLength";
+	static private final String TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH_COMMENT = "Limits the total number of edges in the trip-vehicle graph for each occupancy level per vehicle (0 = no limit)";
+
+	@PositiveOrZero
+	private int tripGraphLimitPerSequenceLength = 0;
+
+	@StringGetter(TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH)
+	public int getTripGraphLimitPerSequenceLength() {
+		return tripGraphLimitPerSequenceLength;
+	}
+
+	@StringSetter(TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH)
+	public void setTripGraphLimitPerSequenceLength(int value) {
+		this.tripGraphLimitPerSequenceLength = value;
+	}
+
 	/* Block handling */
 
 	public static class AssignmentSolverParameters extends ReflectiveConfigGroup {
@@ -477,25 +514,41 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 			return solverType;
 		}
 
-		static private final String RUNTIME_THRESHOLD = "runtimeThreshold_ms";
-		static private final String RUNTIME_THRESHOLD_COMMENT = "Defines the runtime threshold of the assignment algorithm [ms]";
+		static private final String TIME_LIMIT = "timeLimit_s";
+		static private final String TIME_LIMIT_COMMENT = "Defines the runtime threshold of the assignment algorithm [s]";
 
-		private int runtimeThreshold = 3600 * 1000;
+		private double timeLimit = 15;
 
-		@StringGetter(RUNTIME_THRESHOLD)
-		public int getRuntimeThreshold() {
-			return runtimeThreshold;
+		@StringGetter(TIME_LIMIT)
+		public double getTimeLimit() {
+			return timeLimit;
 		}
 
-		@StringSetter(RUNTIME_THRESHOLD)
-		public void setRuntimeThreshold(int value) {
-			this.runtimeThreshold = value;
+		@StringSetter(TIME_LIMIT)
+		public void setTimeLimit(double value) {
+			this.timeLimit = value;
+		}
+
+		static private final String OPTIMALITY_GAP = "optimalityGap";
+		static private final String OPTIMALITY_GAP_COMMENT = "Defines the optimality gap for the algorithm";
+
+		private double optimalityGap = 0.1;
+
+		@StringGetter(OPTIMALITY_GAP)
+		public double getOptimalityGap() {
+			return optimalityGap;
+		}
+
+		@StringSetter(OPTIMALITY_GAP)
+		public void setOptimalityGap(double value) {
+			this.optimalityGap = value;
 		}
 
 		@Override
 		public Map<String, String> getComments() {
 			Map<String, String> comments = super.getComments();
-			comments.put(RUNTIME_THRESHOLD, RUNTIME_THRESHOLD_COMMENT);
+			comments.put(TIME_LIMIT, TIME_LIMIT_COMMENT);
+			comments.put(OPTIMALITY_GAP, OPTIMALITY_GAP_COMMENT);
 			return comments;
 		}
 	}
@@ -569,7 +622,9 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	private final Map<String, Supplier<TravelTimeEstimatorParameters>> availableTravelTimeEstimators = new HashMap<>();
 
 	private void prepareAvailableComponents() {
-		availableAssignmentSolvers.put(BestResponseAssignmentSolver.TYPE, () -> new BestResponseAssignmentParameters());
+		availableAssignmentSolvers.put(GreedyTripFirstSolver.TYPE, () -> new GreedyTripFirstAssignmentParameters());
+		availableAssignmentSolvers.put(GreedyVehicleFirstSolver.TYPE,
+				() -> new GreedyVehicleFirstAssignmentParameters());
 		availableAssignmentSolvers.put(CbcMpsAssignmentSolver.TYPE, () -> new CbcMpsAssignmentParameters());
 		availableAssignmentSolvers.put(GlpkMpsAssignmentSolver.TYPE, () -> new GlpkMpsAssignmentParameters());
 
@@ -585,7 +640,7 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	}
 
 	private void prepareDefaultComponents() {
-		super.addParameterSet(new BestResponseAssignmentParameters());
+		super.addParameterSet(new GreedyTripFirstAssignmentParameters());
 		super.addParameterSet(new BestResponseRelocationParameters());
 		super.addParameterSet(new EuclideanEstimatorParameters());
 		super.addParameterSet(new CongestionMitigationParameters());
@@ -660,9 +715,15 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 
 	/* Assignment parameters */
 
-	public static class BestResponseAssignmentParameters extends AssignmentSolverParameters {
-		public BestResponseAssignmentParameters() {
-			super(BestResponseAssignmentSolver.TYPE);
+	public static class GreedyTripFirstAssignmentParameters extends AssignmentSolverParameters {
+		public GreedyTripFirstAssignmentParameters() {
+			super(GreedyTripFirstSolver.TYPE);
+		}
+	}
+
+	public static class GreedyVehicleFirstAssignmentParameters extends AssignmentSolverParameters {
+		public GreedyVehicleFirstAssignmentParameters() {
+			super(GreedyVehicleFirstSolver.TYPE);
 		}
 	}
 

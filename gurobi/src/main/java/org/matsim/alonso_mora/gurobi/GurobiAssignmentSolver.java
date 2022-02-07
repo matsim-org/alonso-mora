@@ -13,6 +13,7 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Status;
+import org.matsim.alonso_mora.algorithm.assignment.GreedyVehicleFirstSolver;
 
 import gurobi.GRB;
 import gurobi.GRBEnv;
@@ -39,13 +40,15 @@ public class GurobiAssignmentSolver implements AssignmentSolver {
 
 	private final int numberOfThreads;
 	private final double timeLimit;
+	private final double optimalityGap;
 
 	public GurobiAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads,
-			double timeLimit) {
+			double timeLimit, double optimalityGap) {
 		this.unassignmentPenalty = unassignmentPenalty;
 		this.rejectionPenalty = rejectionPenalty;
 		this.numberOfThreads = numberOfThreads;
 		this.timeLimit = timeLimit;
+		this.optimalityGap = optimalityGap;
 	}
 
 	@Override
@@ -65,6 +68,7 @@ public class GurobiAssignmentSolver implements AssignmentSolver {
 			env.set(GRB.IntParam.LogToConsole, 0);
 			env.set(GRB.IntParam.Threads, numberOfThreads);
 			env.set(GRB.DoubleParam.TimeLimit, timeLimit);
+			env.set(GRB.DoubleParam.MIPGap, optimalityGap);
 			env.start();
 
 			GRBModel model = new GRBModel(env);
@@ -132,6 +136,27 @@ public class GurobiAssignmentSolver implements AssignmentSolver {
 			}
 
 			model.setObjective(objective, GRB.MINIMIZE);
+
+			{ // Find heuristic solution and implement
+				GreedyVehicleFirstSolver heuristicSolver = new GreedyVehicleFirstSolver();
+				Solution heuristicSolution = heuristicSolver.solve(tripList.stream());
+
+				for (int i = 0; i < requestList.size(); i++) {
+					requestVariables.get(i).set(GRB.DoubleAttr.Start, 1.0);
+				}
+
+				for (int i = 0; i < tripList.size(); i++) {
+					tripVariables.get(i).set(GRB.DoubleAttr.Start, 0.0);
+				}
+
+				for (AlonsoMoraTrip trip : heuristicSolution.trips) {
+					tripVariables.get(tripList.indexOf(trip)).set(GRB.DoubleAttr.Start, 1.0);
+
+					for (AlonsoMoraRequest request : trip.getRequests()) {
+						requestVariables.get(requestList.indexOf(request)).set(GRB.DoubleAttr.Start, 0.0);
+					}
+				}
+			}
 
 			// Start optimization
 			model.optimize();
