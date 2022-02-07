@@ -1,31 +1,18 @@
 package org.matsim.alonso_mora.algorithm.assignment;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction.Result;
 import org.mockito.Mockito;
 
-public class GlpkMpsAssignmentSolverTest {
-	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-	@Before
-	public void checkSolver() {
-		Assume.assumeTrue("Checking for availability of GLPK solver", GlpkMpsAssignmentSolver.checkAvailability());
-	}
-
+public class GreedyTripFirstAssignmentSolverTest {
 	private AlonsoMoraRequest mockRequest() {
 		return Mockito.mock(AlonsoMoraRequest.class);
 	}
@@ -48,9 +35,8 @@ public class GlpkMpsAssignmentSolverTest {
 	}
 
 	@Test
-	public void testOneVehicleOneRequestExample() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+	public void testOneVehicleOneRequestExample() {
+		AssignmentSolver solver = new GreedyTripFirstSolver();
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -64,9 +50,8 @@ public class GlpkMpsAssignmentSolverTest {
 	}
 
 	@Test
-	public void testTwoIndependentRequests() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+	public void testTwoIndependentRequests() {
+		AssignmentSolver solver = new GreedyTripFirstSolver();
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -85,21 +70,41 @@ public class GlpkMpsAssignmentSolverTest {
 	}
 
 	@Test
-	public void testTwoRequestsWithOneVehicle() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+	public void testTwoRequestsWithOneVehicle() {
+		AssignmentSolver solver = new GreedyTripFirstSolver();
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
 		AlonsoMoraRequest request2 = mockRequest();
 
 		{
-			AlonsoMoraTrip trip1 = mockTrip(vehicle, 100.0, request1);
+			AlonsoMoraTrip trip1 = mockTrip(vehicle, 100.0, request1); // Trip 1 is best
 			AlonsoMoraTrip trip2 = mockTrip(vehicle, 200.0, request2);
 			AlonsoMoraTrip trip3 = mockTrip(vehicle, 300.0, request1, request2);
 
-			// Must take trip 3 as the first two are not independent, but penalty leads us
-			// to assign two requests
+			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
+			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
+
+			Assert.assertEquals(1, selection.size());
+			Assert.assertTrue(selection.contains(trip1));
+		}
+
+		{
+			AlonsoMoraTrip trip1 = mockTrip(vehicle, 100.0, request1);
+			AlonsoMoraTrip trip2 = mockTrip(vehicle, 50.0, request2); // Trip 2 is best
+			AlonsoMoraTrip trip3 = mockTrip(vehicle, 200.0, request1, request2);
+
+			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
+			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
+
+			Assert.assertEquals(1, selection.size());
+			Assert.assertTrue(selection.contains(trip2));
+		}
+
+		{
+			AlonsoMoraTrip trip1 = mockTrip(vehicle, 300.0, request1);
+			AlonsoMoraTrip trip2 = mockTrip(vehicle, 200.0, request2);
+			AlonsoMoraTrip trip3 = mockTrip(vehicle, 50.0, request1, request2); // Combination is best
 
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
@@ -110,26 +115,40 @@ public class GlpkMpsAssignmentSolverTest {
 	}
 
 	@Test
-	public void testTwoRequestsWithOneVehicleLowPenalty() throws IOException {
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(250.0, 250.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+	public void testTwoRequestsWithTwoVehicles() {
+		AssignmentSolver solver = new GreedyTripFirstSolver();
 
-		AlonsoMoraVehicle vehicle = mockVehicle();
+		AlonsoMoraVehicle vehicle1 = mockVehicle();
+		AlonsoMoraVehicle vehicle2 = mockVehicle();
+
 		AlonsoMoraRequest request1 = mockRequest();
 		AlonsoMoraRequest request2 = mockRequest();
 
 		{
-			AlonsoMoraTrip trip1 = mockTrip(vehicle, 100.0, request1);
-			AlonsoMoraTrip trip2 = mockTrip(vehicle, 200.0, request2);
-			AlonsoMoraTrip trip3 = mockTrip(vehicle, 600.0, request1, request2);
+			AlonsoMoraTrip trip1 = mockTrip(vehicle1, 100.0, request1);
+			AlonsoMoraTrip trip2 = mockTrip(vehicle2, 200.0, request2);
+			AlonsoMoraTrip trip3 = mockTrip(vehicle1, 50.0, request1, request2); // Trip 3 is best
+			AlonsoMoraTrip trip4 = mockTrip(vehicle2, 300.0, request1, request2);
 
-			// Must take trip 1 as trip3 is higher than the penalty.
-
-			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
+			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3, trip4);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
 			Assert.assertEquals(1, selection.size());
+			Assert.assertTrue(selection.contains(trip3));
+		}
+
+		{
+			AlonsoMoraTrip trip1 = mockTrip(vehicle1, 100.0, request1); // Trip 1 + 2 are best
+			AlonsoMoraTrip trip2 = mockTrip(vehicle2, 200.0, request2); // Trip 1 + 2 are best
+			AlonsoMoraTrip trip3 = mockTrip(vehicle1, 450.0, request1, request2);
+			AlonsoMoraTrip trip4 = mockTrip(vehicle2, 300.0, request1, request2);
+
+			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3, trip4);
+			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
+
+			Assert.assertEquals(2, selection.size());
 			Assert.assertTrue(selection.contains(trip1));
+			Assert.assertTrue(selection.contains(trip2));
 		}
 	}
 }
