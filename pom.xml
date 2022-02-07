@@ -36,6 +36,7 @@ to the MATSim framework.</description>
 		<module>glpk</module>
 		<module>gurobi</module>
 		<module>cplex</module>
+		<module>examples</module>
 	</modules>
 
 	<dependencies>
