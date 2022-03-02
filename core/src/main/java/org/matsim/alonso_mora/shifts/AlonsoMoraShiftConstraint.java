@@ -67,7 +67,7 @@ public class AlonsoMoraShiftConstraint implements Constraint {
 			return false;
 		}
 
-		if (getNextOperationalTask(vehicle) != null) {
+		if (getNextOperationalTask(vehicle).isPresent()) {
 			return false;
 		}
 
