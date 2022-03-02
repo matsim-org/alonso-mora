@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>org.matsim</groupId>
 		<artifactId>alonso-mora</artifactId>
-		<version>1.0.0</version>
+		<version>moia-latest-SNAPSHOT</version>
 	</parent>
 
 	<repositories>
@@ -32,7 +32,7 @@
 		<dependency>
 			<groupId>org.matsim.alonso-mora</groupId>
 			<artifactId>core</artifactId>
-			<version>1.0.0</version>
+			<version>moia-latest-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 </project>
