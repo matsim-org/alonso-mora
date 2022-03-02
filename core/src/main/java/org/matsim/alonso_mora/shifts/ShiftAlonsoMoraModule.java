@@ -12,6 +12,7 @@ import org.matsim.contrib.drt.extension.shifts.optimizer.ShiftDrtOptimizer;
 import org.matsim.contrib.drt.extension.shifts.schedule.ShiftDrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
+import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater.StayTaskEndTimeCalculator;
@@ -34,7 +35,7 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 
 		// TODO: This can become a general binding in DRT
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
-			return new ShiftDrtStayTaskEndTimeCalculator(shiftConfig, new EDrtStayTaskEndTimeCalculator(drtConfig));
+			return new ShiftDrtStayTaskEndTimeCalculator(shiftConfig, new DrtStayTaskEndTimeCalculator(drtConfig));
 		}));
 
 		bindModal(OperationalVoter.class).toProvider(modalProvider(getter -> {
