@@ -38,9 +38,10 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 		}));
 
 		// TODO: This can become a general binding in DRT
-		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter ->
-				new ShiftDrtStayTaskEndTimeCalculator(drtConfig.getDrtShiftParams(),
-						new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropoffRequests, pickupRequests) -> drtConfig.getStopDuration()))));
+		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
+			return new ShiftDrtStayTaskEndTimeCalculator(drtConfig.getDrtShiftParams(),
+					new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropoffRequests, pickupRequests) -> drtConfig.getStopDuration()));
+		}));
 
 		bindModal(OperationalVoter.class).toProvider(modalProvider(getter -> {
 			return new ShiftOperationalVoter();
