@@ -9,14 +9,14 @@
 	<parent>
 		<groupId>org.matsim</groupId>
 		<artifactId>alonso-mora</artifactId>
-		<version>moia-latest-SNAPSHOT</version>
+		<version>1.0.0</version>
 	</parent>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.matsim.alonso-mora</groupId>
 			<artifactId>core</artifactId>
-			<version>moia-latest-SNAPSHOT</version>
+			<version>1.0.0</version>
 		</dependency>
 	</dependencies>
 </project>
