@@ -12,8 +12,6 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.contrib.drt.extension.shifts.schedule.ShiftBreakTask;
-import org.matsim.contrib.drt.extension.shifts.schedule.ShiftChangeOverTask;
 import org.matsim.contrib.drt.extension.shifts.schedule.WaitForShiftStayTask;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
@@ -429,31 +427,11 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 				}
 
 				if (operationalTask.getBeginTime() > currentTask.getEndTime()) {
-					if(operationalTask instanceof ShiftBreakTask) {
-						// We need to fill the gap with a stay task if break is not planned to start yet
-						double earliestBreakStartTime = ((ShiftBreakTask) operationalTask).getShiftBreak().getEarliestBreakStartTime();
-						if (earliestBreakStartTime > currentTask.getEndTime()) {
-							if(currentTask instanceof DrtStayTask) {
-								currentTask.setEndTime(earliestBreakStartTime);
-							} else {
-								currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
-										earliestBreakStartTime, operationalLink);
-								schedule.addTask(currentTask);
-							}
-						}
-					} else if (operationalTask instanceof ShiftChangeOverTask) {
-						// We need to fill the gap with a stay task
-						double shiftEndTime = ((ShiftChangeOverTask) operationalTask).getShift().getEndTime();
-						if(shiftEndTime > currentTask.getEndTime()) {
-							if(currentTask instanceof DrtStayTask) {
-								currentTask.setEndTime(shiftEndTime);
-							} else {
-								currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
-										shiftEndTime, operationalLink);
-								schedule.addTask(currentTask);
-							}
-						}
-					}
+					// We need to fill the gap with a stay task
+
+					currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
+							operationalTask.getBeginTime(), operationalLink);
+					schedule.addTask(currentTask);
 				}
 
 				double endTime = endTimeCalculator.calcNewEndTime(dvrpVehicle, (StayTask) operationalTask,
