@@ -235,15 +235,15 @@ public class AlonsoMoraExamplesIT {
 		});
 
 		AlonsoMoraConfigurator.configure(controller, amConfig.getMode());
-		controller.addOverridingQSimModule(new ShiftAlonsoMoraModule(drtConfig, shiftDrtConfigGroup));
+		controller.addOverridingQSimModule(new ShiftAlonsoMoraModule(drtConfig, shiftDrtConfigGroup, amConfig));
 		controller.run();
 
 		var expectedStats = Stats.newBuilder() //
-				.rejectionRate(0.85) //
-				.rejections(329) //
-				.waitAverage(276.39) //
-				.inVehicleTravelTimeMean(391.73) //
-				.totalTravelTimeMean(668.12) //
+				.rejectionRate(0.86) //
+				.rejections(332) //
+				.waitAverage(283.79) //
+				.inVehicleTravelTimeMean(370.75) //
+				.totalTravelTimeMean(654.54) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
