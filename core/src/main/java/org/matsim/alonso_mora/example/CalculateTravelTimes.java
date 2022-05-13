@@ -7,11 +7,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -43,14 +43,29 @@ import org.matsim.core.trafficmonitoring.FreeSpeedTravelTime;
 public class CalculateTravelTimes {
 	private final static Logger logger = Logger.getLogger(CalculateTravelTimes.class);
 
-	static public void main(String[] args) throws ConfigurationException {
+	static public void main(String[] args) throws ConfigurationException, InterruptedException {
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("population-path", "network-path", "output-path") //
-				.allowOptions("hour", "sampling-rate", "initial-speed", "threads") //
+				.allowOptions("hours", "days", "sampling-rate", "initial-speed", "threads", "iterations") //
 				.build();
 
-		Optional<Integer> hour = cmd.getOption("hour").map(Integer::parseInt);
+		List<Integer> hours = new LinkedList<>();
+		List<Integer> days = new LinkedList<>();
+
+		if (cmd.hasOption("hours")) {
+			for (String hour : cmd.getOptionStrict("hours").split(",")) {
+				hours.add(Integer.parseInt(hour.trim()));
+			}
+		}
+
+		if (cmd.hasOption("days")) {
+			for (String day : cmd.getOptionStrict("days").split(",")) {
+				days.add(Integer.parseInt(day.trim()));
+			}
+		}
+
 		double initialSpeed = cmd.getOption("initial-speed").map(Double::parseDouble).orElse(50.0 / 3.6);
+		int maximumIterations = cmd.getOption("iterations").map(Integer::parseInt).orElse(1000);
 
 		Scenario scenario = ScenarioUtils.createScenario(ConfigUtils.createConfig());
 		new MatsimNetworkReader(scenario.getNetwork()).readFile(cmd.getOptionStrict("network-path"));
@@ -103,7 +118,19 @@ public class CalculateTravelTimes {
 
 				double departureTime = originActivity.getEndTime().seconds();
 
-				if (hour.isEmpty() || ((int) (departureTime / 3600.0)) % 24 == hour.get()) {
+				boolean includeHour = hours.size() == 0;
+				for (int hour : hours) {
+					includeHour |= ((int) (departureTime / 3600.0)) % 24 == hour;
+				}
+
+				boolean includeDay = days.size() == 0;
+				for (int day : days) {
+					includeDay |= ((int) (departureTime / 86400.0)) % 7 == day;
+				}
+
+				boolean include = includeDay && includeHour;
+
+				if (include) {
 					counts[originIndex][destinationIndex] += 1;
 					meanTravelTimes[originIndex][destinationIndex] += leg.getTravelTime().seconds();
 
@@ -205,7 +232,7 @@ public class CalculateTravelTimes {
 		int mainIteration = 0;
 		TravelTime travelTime = new FreeSpeedTravelTime();
 
-		while (again) {
+		while (again && mainIteration < maximumIterations) {
 			again = false;
 			mainIteration++;
 
@@ -223,7 +250,22 @@ public class CalculateTravelTimes {
 			logger.info("      Calculating offsets");
 
 			AtomicInteger currentCount = new AtomicInteger(0);
-			AtomicLong lastTime = new AtomicLong(System.nanoTime());
+			AtomicBoolean finished = new AtomicBoolean(false);
+			int interval = 5000; // ms
+
+			Thread progressThread = new Thread(() -> {
+				while (!finished.get()) {
+					try {
+						logger.info("         " + currentCount.get() + "/" + relevantLinks.size());
+
+						Thread.sleep(interval);
+					} catch (InterruptedException e) {
+						return;
+					}
+				}
+			});
+
+			progressThread.start();
 
 			pool.submit(() -> {
 				relevantLinks.stream().parallel().forEach(link -> {
@@ -231,18 +273,16 @@ public class CalculateTravelTimes {
 							.collect(Collectors.toSet());
 
 					double offset = tripsWithLink.stream().mapToDouble(t -> {
-						return (t.estimatedTravelTime - t.meanTravelTime) * t.elements;
+						return (t.estimatedTravelTime - t.meanTravelTime);
 					}).sum();
 
 					link.getAttributes().putAttribute("offset", offset);
 					currentCount.incrementAndGet();
-
-					if (lastTime.get() + 1e10 < System.nanoTime()) {
-						lastTime.set(System.nanoTime());
-						logger.info("         " + currentCount.get() + "/" + relevantLinks.size());
-					}
 				});
 			}).join();
+
+			finished.set(true);
+			progressThread.join();
 
 			double k = 1.2;
 			int innerIteration = 0;
@@ -253,11 +293,12 @@ public class CalculateTravelTimes {
 
 				for (Link link : relevantLinks) {
 					double offset = (Double) link.getAttributes().getAttribute("offset");
+					link.getAttributes().putAttribute("initial", link.getFreespeed());
 
 					if (offset < 0.0) {
-						link.setFreespeed(link.getFreespeed() / k);
+						link.setFreespeed(Math.max(0.5, link.getFreespeed() / k));
 					} else {
-						link.setFreespeed(link.getFreespeed() * k);
+						link.setFreespeed(Math.min(30.0, link.getFreespeed() * k));
 					}
 				}
 
@@ -284,16 +325,8 @@ public class CalculateTravelTimes {
 				} else {
 					// Revert (not covered in pseudo code)
 
-					if (true) {
-						for (Link link : relevantLinks) {
-							double offset = (Double) link.getAttributes().getAttribute("offset");
-
-							if (offset < 0.0) {
-								link.setFreespeed(link.getFreespeed() * k);
-							} else {
-								link.setFreespeed(link.getFreespeed() / k);
-							}
-						}
+					for (Link link : relevantLinks) {
+						link.setFreespeed((Double) link.getAttributes().getAttribute("initial"));
 					}
 
 					k = 1 + (k - 1) * 0.75;

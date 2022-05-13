@@ -1,13 +1,13 @@
 package org.matsim.alonso_mora.algorithm.function.sequence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.log4j.Logger;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
@@ -31,9 +31,29 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
 	private boolean[] pickupIndices;
 
 	private final List<AlonsoMoraStop> stops;
-	private Set<Integer> onboardIndices = new HashSet<>();
 
 	private boolean finished = false;
+
+	double startTime = Double.NaN;
+	double nextMessageTime = Double.NaN;
+	double messageInterval = 60.0;
+
+	Logger logger = Logger.getLogger(ExtensiveSequenceGenerator.class);
+
+	private void messageCall() {
+		double currentTime = System.nanoTime() * 1e-9;
+
+		if (Double.isNaN(startTime)) {
+			startTime = currentTime;
+			nextMessageTime = currentTime + messageInterval;
+		} else if (currentTime >= nextMessageTime) {
+			nextMessageTime += messageInterval;
+
+			double elapsed = currentTime - startTime;
+			logger.info(hashCode() + " elapsed:" + elapsed + " length:" + sequenceLength + " requests:"
+					+ requestIndices.length);
+		}
+	}
 
 	public ExtensiveSequenceGenerator(Collection<AlonsoMoraRequest> onboardRequests,
 			Collection<AlonsoMoraRequest> requests) {
@@ -47,11 +67,17 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
 
 		this.stops = new ArrayList<>(this.sequenceLength);
 
+		this.initialPickedUp = new boolean[sequenceLength];
+		this.pickedUp = new boolean[sequenceLength];
+		this.droppedOff = new boolean[sequenceLength];
+
 		int requestIndex = 0;
 		int stopIndex = 0;
 
+		messageCall();
+
 		for (AlonsoMoraRequest request : onboardRequests) {
-			onboardIndices.add(requestIndex);
+			initialPickedUp[requestIndex] = true;
 
 			requestIndices[stopIndex] = requestIndex;
 			pickupIndices[stopIndex] = false;
@@ -80,6 +106,7 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
 
 	@Override
 	public void advance() {
+		messageCall();
 		internalAdvance(true);
 	}
 
@@ -122,25 +149,29 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
 		finished = true;
 	}
 
+	private boolean[] initialPickedUp;
+	private boolean[] pickedUp;
+	private boolean[] droppedOff;
+
 	boolean isFeasible() {
-		Set<Integer> pickedUp = new HashSet<>(onboardIndices);
-		Set<Integer> droppedOff = new HashSet<>();
+		System.arraycopy(initialPickedUp, 0, pickedUp, 0, sequenceLength);
+		Arrays.fill(droppedOff, false);
 
 		for (int i = 0; i <= currentIndex; i++) {
 			int stopIndex = currentSequence[i];
 			int requestIndex = requestIndices[stopIndex];
 
 			if (pickupIndices[stopIndex]) {
-				if (pickedUp.contains(requestIndex)) {
+				if (pickedUp[requestIndex]) {
 					return false;
 				} else {
-					pickedUp.add(requestIndex);
+					pickedUp[requestIndex] = true;
 				}
 			} else {
-				if (droppedOff.contains(requestIndex)) {
+				if (droppedOff[requestIndex]) {
 					return false;
-				} else if (pickedUp.contains(requestIndex)) {
-					droppedOff.add(requestIndex);
+				} else if (pickedUp[requestIndex]) {
+					droppedOff[requestIndex] = true;
 				} else {
 					return false;
 				}

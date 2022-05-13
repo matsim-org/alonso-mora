@@ -73,6 +73,11 @@ to the MATSim framework.</description>
 		</dependency>
 		<dependency>
 			<groupId>org.matsim.contrib</groupId>
+			<artifactId>osm</artifactId>
+			<version>${matsim.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.matsim.contrib</groupId>
 			<artifactId>drt</artifactId>
 			<version>${matsim.version}</version>
 		</dependency>

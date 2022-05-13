@@ -368,12 +368,34 @@ public class AlonsoMoraAlgorithm {
 						VehicleGraph vehicleGraph = item.getValue();
 
 						if (topMatchings == null) {
-							for (AlonsoMoraRequest request : queuedRequests) {
-								vehicleGraph.addRequest(request, now);
-							}
+							// First, requests that are already assigned to the vehicle
+							// Always add them, do not consider trip graph thresholds
 
 							for (AlonsoMoraRequest request : assignedRequests) {
-								vehicleGraph.addRequest(request, now);
+								if (request.getVehicle() == item.getKey()) {
+									vehicleGraph.addRequest(request, now, false);
+								}
+							}
+
+							for (AlonsoMoraRequest request : queuedRequests) {
+								if (request.getVehicle() == item.getKey()) {
+									vehicleGraph.addRequest(request, now, false);
+								}
+							}
+
+							// Second, requests that are not assigned to this vehicle
+							// Trip graph thresholds may apply here
+
+							for (AlonsoMoraRequest request : assignedRequests) {
+								if (request.getVehicle() != item.getKey()) {
+									vehicleGraph.addRequest(request, now, true);
+								}
+							}
+
+							for (AlonsoMoraRequest request : queuedRequests) {
+								if (request.getVehicle() != item.getKey()) {
+									vehicleGraph.addRequest(request, now, true);
+								}
 							}
 						} else {
 							Map<AlonsoMoraRequest, AlonsoMoraFunction.Result> vehicleMatchings = topMatchings
@@ -382,7 +404,18 @@ public class AlonsoMoraAlgorithm {
 							if (vehicleMatchings != null) {
 								for (Map.Entry<AlonsoMoraRequest, AlonsoMoraFunction.Result> matching : vehicleMatchings
 										.entrySet()) {
-									vehicleGraph.addRequest(matching.getKey(), now, matching.getValue());
+									if (matching.getKey().getVehicle() == item.getKey()) {
+										// Requests that are already assigned to the vehicle
+										vehicleGraph.addRequest(matching.getKey(), now, matching.getValue(), false);
+									}
+								}
+
+								for (Map.Entry<AlonsoMoraRequest, AlonsoMoraFunction.Result> matching : vehicleMatchings
+										.entrySet()) {
+									if (matching.getKey().getVehicle() != item.getKey()) {
+										// Requests that are not already assigned to the vehicle
+										vehicleGraph.addRequest(matching.getKey(), now, matching.getValue(), true);
+									}
 								}
 							}
 						}
@@ -434,6 +467,11 @@ public class AlonsoMoraAlgorithm {
 			for (AlonsoMoraRequest request : trip.getRequests()) {
 				Verify.verify(newAssignedRequests.add(request), "Request is assigned twice!");
 
+				if (request.isAssigned() && !request.getVehicle().equals(trip.getVehicle())) {
+					// Just for statistics: We track whether a request is assigned to a new vehicle
+					information.numberOfReassignments++;
+				}
+
 				// Set the vehicle
 				request.setVehicle(trip.getVehicle());
 
@@ -462,11 +500,6 @@ public class AlonsoMoraAlgorithm {
 								plannedPickupTime = Math.min(plannedPickupTime, request.getLatestPickupTime());
 
 								request.setPlannedPickupTime(plannedPickupTime);
-							}
-
-							if (request.isAssigned() && !request.getVehicle().equals(trip.getVehicle())) {
-								// Just for statistics: We track whether a request is assigned to a new vehicle
-								information.numberOfReassignments++;
 							}
 						} else if (stop.getType().equals(StopType.Dropoff)) {
 							// We're looking at the dropoff stop

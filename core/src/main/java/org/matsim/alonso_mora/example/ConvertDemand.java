@@ -86,11 +86,11 @@ public class ConvertDemand {
 			List<String> row = Arrays.asList(line.split(";"));
 
 			if (indexPickupTime == -1) {
-				indexPickupTime = row.indexOf("time");
-				indexOriginX = row.indexOf("origin_x");
-				indexOriginY = row.indexOf("origin_y");
-				indexDestinationX = row.indexOf("destination_x");
-				indexDestinationY = row.indexOf("destination_y");
+				indexPickupTime = row.indexOf("pickup_time");
+				indexOriginX = row.indexOf("pickup_x");
+				indexOriginY = row.indexOf("pickup_y");
+				indexDestinationX = row.indexOf("dropoff_x");
+				indexDestinationY = row.indexOf("dropoff_y");
 				indexTravelTime = row.indexOf("travel_time");
 			} else {
 				double time = Double.parseDouble(row.get(indexPickupTime));
@@ -131,10 +131,10 @@ public class ConvertDemand {
 							leg.setTravelTime(travelTime);
 							plan.addLeg(leg);
 
-							Activity destinationActviity = factory.createActivityFromCoord("generic",
+							Activity destinationActvity = factory.createActivityFromCoord("generic",
 									destinationLink.getCoord());
-							destinationActviity.setLinkId(destinationLink.getId());
-							plan.addActivity(destinationActviity);
+							destinationActvity.setLinkId(destinationLink.getId());
+							plan.addActivity(destinationActvity);
 
 							tripIndex++;
 						}
