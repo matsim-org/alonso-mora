@@ -1,5 +1,7 @@
 package org.matsim.alonso_mora;
 
+import static org.matsim.contrib.dvrp.path.VrpPaths.FIRST_LINK_TT;
+
 import java.io.File;
 
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup.CbcMpsAssignmentParameters;
@@ -53,7 +55,6 @@ import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.optimizer.QSimScopeForkJoinPoolHolder;
-import org.matsim.contrib.drt.optimizer.insertion.DetourTimeEstimator;
 import org.matsim.contrib.drt.optimizer.rebalancing.RebalancingStrategy;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
@@ -61,10 +62,11 @@ import org.matsim.contrib.drt.schedule.DrtTaskFactory;
 import org.matsim.contrib.drt.scheduler.DrtScheduleInquiry;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
 import org.matsim.contrib.dvrp.fleet.Fleet;
+import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater.StayTaskEndTimeCalculator;
-import org.matsim.contrib.zone.skims.DvrpTravelTimeMatrix;
+import org.matsim.contrib.zone.skims.TravelTimeMatrix;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.mobsim.framework.MobsimTimer;
@@ -224,9 +226,20 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		bindModal(LeastCostPathCalculator.class).to(modalKey(ParallelLeastCostPathCalculator.class));
 
 		bindModal(DrtDetourTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
-			DetourTimeEstimator estimator = DetourTimeEstimator.createFreeSpeedZonalTimeEstimator(1.0,
-					getter.getModal(DvrpTravelTimeMatrix.class), getter.getModal(TravelTime.class));
-			return new DrtDetourTravelTimeEstimator(estimator);
+			// Copy & paste from DetourTimeEstimator.createMatrixBasedEstimator
+			TravelTimeMatrix matrix = getter.getModal(TravelTimeMatrix.class);
+			TravelTime travelTime = getter.getModal(TravelTime.class);
+			double speedFactor = 1.0;
+			
+			return new DrtDetourTravelTimeEstimator((from, to, departureTime) -> {
+				if (from == to) {
+					return 0;
+				}
+				double duration = FIRST_LINK_TT;
+				duration += matrix.getTravelTime(from.getToNode(), to.getFromNode(), departureTime + duration);
+				duration += VrpPaths.getLastLinkTT(travelTime, to, departureTime + duration);
+				return duration / speedFactor;
+			});
 		})).in(Singleton.class);
 
 		bindModal(EuclideanTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
