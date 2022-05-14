@@ -24,6 +24,6 @@ public class DrtDetourTravelTimeEstimator implements TravelTimeEstimator {
 
 	@Override
 	public double estimateTravelTime(Link fromLink, Link toLink, double departureTime, double arrivalTimeThreshold) {
-		return delegate.estimateTime(fromLink, toLink);
+		return delegate.estimateTime(fromLink, toLink, departureTime);
 	}
 }
