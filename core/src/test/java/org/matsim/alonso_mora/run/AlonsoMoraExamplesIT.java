@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.AlonsoMoraConfigurator;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
+import org.matsim.alonso_mora.shifts.ShiftAlonsoMoraModule;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
