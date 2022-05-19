@@ -29,6 +29,7 @@ import org.matsim.alonso_mora.shifts.ShiftAlonsoMoraModule;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.extension.shifts.config.DrtShiftParams;
 import org.matsim.contrib.drt.extension.shifts.config.DrtWithShiftsConfigGroup;
 import org.matsim.contrib.drt.extension.shifts.operationFacilities.*;
 import org.matsim.contrib.drt.extension.shifts.run.ShiftDrtModeModule;
@@ -46,6 +47,7 @@ import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
 import org.matsim.contrib.dvrp.run.DvrpModule;
 import org.matsim.contrib.dvrp.run.DvrpQSimComponents;
 import org.matsim.core.config.Config;
+import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
@@ -131,8 +133,10 @@ public class AlonsoMoraExamplesIT {
 		config.controler().setOutputDirectory(utils.getOutputDirectory());
 
 		// Remove DRT rebalancer as we want to use AM rebalancer
-		DrtConfigGroup drtConfig = MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();
+		DrtWithShiftsConfigGroup drtConfig = (DrtWithShiftsConfigGroup) MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();
 		drtConfig.removeParameterSet(drtConfig.getRebalancingParams().get());
+		ConfigGroup shiftParams = drtConfig.createParameterSet(DrtShiftParams.SET_NAME);
+		drtConfig.addParameterSet(shiftParams);
 
 		// Load scenario
 		Scenario scenario = ScenarioUtils.createScenario(config);
