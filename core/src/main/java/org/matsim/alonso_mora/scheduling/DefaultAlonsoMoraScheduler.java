@@ -13,6 +13,7 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.extension.shifts.schedule.WaitForShiftStayTask;
+import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DrtDriveTask;
 import org.matsim.contrib.drt.schedule.DrtStayTask;
@@ -288,7 +289,9 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 				// Add requests to the stop task
 
 				if (stop.getType().equals(StopType.Pickup)) {
-					stop.getRequest().getDrtRequests().forEach(stopTask::addPickupRequest);
+					for (DrtRequest drtRequest : stop.getRequest().getDrtRequests()) {
+						stopTask.addPickupRequest(AcceptedDrtRequest.createFromOriginalRequest(drtRequest));
+					}
 					stop.getRequest().setPickupTask(vehicle, stopTask);
 
 					if (checkDeterminsticTravelTimes) {
@@ -298,7 +301,9 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 								"Checking for determinstic travel times and found mismatch between expected stop time and planned stop time.");
 					}
 				} else if (stop.getType().equals(StopType.Dropoff)) {
-					stop.getRequest().getDrtRequests().forEach(stopTask::addDropoffRequest);
+					for (DrtRequest drtRequest : stop.getRequest().getDrtRequests()) {
+						stopTask.addDropoffRequest(AcceptedDrtRequest.createFromOriginalRequest(drtRequest));
+					}
 					stop.getRequest().setDropoffTask(vehicle, stopTask);
 
 					if (checkDeterminsticTravelTimes) {
