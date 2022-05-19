@@ -305,7 +305,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		bindModal(Constraint.class).toInstance(new NoopConstraint());
 
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
-			return new DrtStayTaskEndTimeCalculator((dvrpVehicle, collection, collection1) -> drtConfig.getStopDuration());
+			return new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropOffRequests, pickupRequests) -> drtConfig.getStopDuration());
 		}));
 
 		bindModal(AlonsoMoraScheduler.class).toProvider(modalProvider(getter -> {
