@@ -1,38 +1,17 @@
 package org.matsim.alonso_mora;
 
-import java.io.File;
-
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.CbcMpsAssignmentParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.CbcMpsRelocationParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.CongestionMitigationParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.EuclideanEstimatorParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.GlpkMpsAssignmentParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.GlpkMpsRelocationParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.HybridEstimatorParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.MatrixEstimatorParameters;
-import org.matsim.alonso_mora.AlonsoMoraConfigGroup.RoutingEstimatorParameters;
-import org.matsim.alonso_mora.algorithm.AlonsoMoraAlgorithm;
+import com.google.inject.Singleton;
+import org.matsim.alonso_mora.AlonsoMoraConfigGroup.*;
+import org.matsim.alonso_mora.algorithm.*;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraAlgorithm.AlgorithmSettings;
-import org.matsim.alonso_mora.algorithm.AlonsoMoraRequestFactory;
-import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicleFactory;
-import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraRequestFactory;
-import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraVehicle;
-import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
-import org.matsim.alonso_mora.algorithm.assignment.CbcMpsAssignmentSolver;
-import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
-import org.matsim.alonso_mora.algorithm.assignment.GreedyTripFirstSolver;
-import org.matsim.alonso_mora.algorithm.assignment.GreedyVehicleFirstSolver;
+import org.matsim.alonso_mora.algorithm.assignment.*;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.Constraint;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.MinimumDelay;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.NoopConstraint;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.Objective;
-import org.matsim.alonso_mora.algorithm.function.sequence.CombinedSequenceGenerator;
-import org.matsim.alonso_mora.algorithm.function.sequence.EuclideanSequenceGenerator;
-import org.matsim.alonso_mora.algorithm.function.sequence.ExtensiveSequenceGenerator;
-import org.matsim.alonso_mora.algorithm.function.sequence.InsertiveSequenceGenerator;
-import org.matsim.alonso_mora.algorithm.function.sequence.SequenceGeneratorFactory;
+import org.matsim.alonso_mora.algorithm.function.sequence.*;
 import org.matsim.alonso_mora.algorithm.relocation.BestResponseRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.CbcMpsRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.GlpkMpsRelocationSolver;
@@ -43,17 +22,10 @@ import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.NoopOperatio
 import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter;
 import org.matsim.alonso_mora.scheduling.ParallelLeastCostPathCalculator;
 import org.matsim.alonso_mora.scheduling.StandardRebalancer;
-import org.matsim.alonso_mora.travel_time.DrtDetourTravelTimeEstimator;
-import org.matsim.alonso_mora.travel_time.EuclideanTravelTimeEstimator;
-import org.matsim.alonso_mora.travel_time.HybridTravelTimeEstimator;
-import org.matsim.alonso_mora.travel_time.LazyMatrixTravelTimeEstimator;
-import org.matsim.alonso_mora.travel_time.MatrixTravelTimeEstimator;
-import org.matsim.alonso_mora.travel_time.RoutingTravelTimeEstimator;
-import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
+import org.matsim.alonso_mora.travel_time.*;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.optimizer.QSimScopeForkJoinPoolHolder;
-import org.matsim.contrib.drt.optimizer.insertion.DetourTimeEstimator;
 import org.matsim.contrib.drt.optimizer.rebalancing.RebalancingStrategy;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
@@ -61,10 +33,11 @@ import org.matsim.contrib.drt.schedule.DrtTaskFactory;
 import org.matsim.contrib.drt.scheduler.DrtScheduleInquiry;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
 import org.matsim.contrib.dvrp.fleet.Fleet;
+import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater.StayTaskEndTimeCalculator;
-import org.matsim.contrib.zone.skims.DvrpTravelTimeMatrix;
+import org.matsim.contrib.zone.skims.TravelTimeMatrix;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.mobsim.framework.MobsimTimer;
@@ -74,7 +47,9 @@ import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.LeastCostPathCalculatorFactory;
 import org.matsim.core.router.util.TravelTime;
 
-import com.google.inject.Singleton;
+import java.io.File;
+
+import static org.matsim.contrib.dvrp.path.VrpPaths.FIRST_LINK_TT;
 
 /**
  * Registers all components for the Alonso-Mora dispatcher in the MATSim QSim
@@ -224,9 +199,20 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		bindModal(LeastCostPathCalculator.class).to(modalKey(ParallelLeastCostPathCalculator.class));
 
 		bindModal(DrtDetourTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
-			DetourTimeEstimator estimator = DetourTimeEstimator.createFreeSpeedZonalTimeEstimator(1.0,
-					getter.getModal(DvrpTravelTimeMatrix.class), getter.getModal(TravelTime.class));
-			return new DrtDetourTravelTimeEstimator(estimator);
+			// Copy & paste from DetourTimeEstimator.createMatrixBasedEstimator
+			TravelTimeMatrix matrix = getter.getModal(TravelTimeMatrix.class);
+			TravelTime travelTime = getter.getModal(TravelTime.class);
+			double speedFactor = 1.0;
+			
+			return new DrtDetourTravelTimeEstimator((from, to, departureTime) -> {
+				if (from == to) {
+					return 0;
+				}
+				double duration = FIRST_LINK_TT;
+				duration += matrix.getTravelTime(from.getToNode(), to.getFromNode(), departureTime + duration);
+				duration += VrpPaths.getLastLinkTT(travelTime, to, departureTime + duration);
+				return duration / speedFactor;
+			});
 		})).in(Singleton.class);
 
 		bindModal(EuclideanTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
@@ -319,7 +305,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		bindModal(Constraint.class).toInstance(new NoopConstraint());
 
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
-			return new DrtStayTaskEndTimeCalculator(drtConfig);
+			return new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropOffRequests, pickupRequests) -> drtConfig.getStopDuration());
 		}));
 
 		bindModal(AlonsoMoraScheduler.class).toProvider(modalProvider(getter -> {

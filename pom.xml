@@ -16,7 +16,7 @@ to the MATSim framework.</description>
 	<properties>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<matsim.version>14.0-PR1863</matsim.version>
+		<matsim.version>15.0-SNAPSHOT</matsim.version>
 	</properties>
 
 	<repositories>
@@ -73,6 +73,11 @@ to the MATSim framework.</description>
 		<dependency>
 			<groupId>org.matsim.contrib</groupId>
 			<artifactId>drt</artifactId>
+			<version>${matsim.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.matsim.contrib</groupId>
+			<artifactId>drt-extensions</artifactId>
 			<version>${matsim.version}</version>
 		</dependency>
 		<dependency>
