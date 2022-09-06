@@ -53,9 +53,9 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 	public Solution solve(Stream<AlonsoMoraTrip> candidates) {
 		List<AlonsoMoraTrip> tripList = candidates.collect(Collectors.toList());
 		List<AlonsoMoraRequest> requestList = new ArrayList<>(
-				tripList.stream().flatMap(t -> t.getRequests().stream()).collect(Collectors.toSet()));
+				tripList.stream().flatMap(t -> t.getRequests().stream()).distinct().collect(Collectors.toList()));
 		List<AlonsoMoraVehicle> vehicleList = new ArrayList<>(
-				tripList.stream().map(t -> t.getVehicle()).collect(Collectors.toSet()));
+				tripList.stream().map(t -> t.getVehicle()).distinct().collect(Collectors.toList()));
 
 		if (requestList.size() == 0) {
 			return new Solution(Status.OPTIMAL, Collections.emptySet());

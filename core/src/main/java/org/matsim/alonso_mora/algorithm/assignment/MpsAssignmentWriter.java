@@ -33,9 +33,9 @@ public class MpsAssignmentWriter {
 
 	public void write(File path) throws IOException {
 		List<AlonsoMoraRequest> requestList = new ArrayList<>(
-				tripList.stream().flatMap(t -> t.getRequests().stream()).collect(Collectors.toSet()));
+				tripList.stream().flatMap(t -> t.getRequests().stream()).distinct().collect(Collectors.toList()));
 		List<AlonsoMoraVehicle> vehicleList = new ArrayList<>(
-				tripList.stream().map(t -> t.getVehicle()).collect(Collectors.toSet()));
+				tripList.stream().map(t -> t.getVehicle()).distinct().collect(Collectors.toList()));
 
 		int numberOfRequests = requestList.size();
 		int numberOfTrips = tripList.size();
