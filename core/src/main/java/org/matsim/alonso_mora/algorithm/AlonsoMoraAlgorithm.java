@@ -626,6 +626,17 @@ public class AlonsoMoraAlgorithm {
 
 			information.numberOfRelocations++;
 		}
+		
+		if (settings.useStepwiseRelocation) {
+			List<AlonsoMoraVehicle> stopVehicles = new ArrayList<>(relocatableVehicles);
+			relocations.forEach(r -> stopVehicles.remove(r.vehicle));
+			
+			for (AlonsoMoraVehicle vehicle : stopVehicles) {
+				vehicle.setRoute(
+						Collections.singletonList(new AlonsoMoraStop(StopType.Relocation, vehicle.getNextDiversion(now).link, null)));
+				scheduler.schedule(vehicle, now);
+			}
+		}
 	}
 
 	public Optional<Information> run(List<AlonsoMoraRequest> newRequests, double now) {
@@ -725,6 +736,7 @@ public class AlonsoMoraAlgorithm {
 
 	static public class AlgorithmSettings {
 		final boolean useBindingRelocations;
+		final boolean useStepwiseRelocation;
 		final boolean preserveVehicleAssignments;
 		final boolean usePlannedPickupTime;
 		final double plannedPickupTimeSlack;
@@ -737,6 +749,7 @@ public class AlonsoMoraAlgorithm {
 
 		public AlgorithmSettings(AlonsoMoraConfigGroup config) {
 			this.useBindingRelocations = config.getUseBindingRelocations();
+			this.useStepwiseRelocation = config.getUseStepwiseRelocation();
 			this.preserveVehicleAssignments = config.getCongestionMitigationParameters()
 					.getPreserveVehicleAssignments();
 			this.usePlannedPickupTime = config.getUsePlannedPickupTime();
