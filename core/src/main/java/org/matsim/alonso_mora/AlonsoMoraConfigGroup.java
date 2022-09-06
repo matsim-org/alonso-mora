@@ -242,6 +242,7 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 		comments.put(INSERTION_START_OCCUPANCY, INSERTION_START_OCCUPANCY_COMMENT);
 		comments.put(RELOCATION_INTERVAL, RELOCATION_INTERVAL_COMMENT);
 		comments.put(USE_BINDING_RELOCATIONS, USE_BINDING_RELOCATIONS_COMMENT);
+		comments.put(USE_STEPWISE_RELOCATION, USE_STEPWISE_RELOCATION_COMMENT);
 		comments.put(TRIP_GRAPH_LIMIT_PER_VEHICLE, TRIP_GRAPH_LIMIT_PER_VEHICLE_COMMENT);
 		comments.put(TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH, TRIP_GRAPH_LIMIT_PER_SEQUENCE_LENGTH_COMMENT);
 		comments.put(ASSIGNMENT_INTERVAL, ASSIGNMENT_INTERVAL_COMMENT);
@@ -462,6 +463,21 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	@StringSetter(USE_BINDING_RELOCATIONS)
 	public void setUseBindingRelocations(boolean value) {
 		this.useBindingRelocations = value;
+	}
+
+	static private final String USE_STEPWISE_RELOCATION = "useStepwiseRelocation";
+	static private final String USE_STEPWISE_RELOCATION_COMMENT = "If enabled, vehicles are stopped that are currently relocating but are not assigned a new relocation destination. If false they will finish their previous relocation if not assigned anoter one.";
+
+	private boolean useStepwiseRelocation = false;
+
+	@StringGetter(USE_STEPWISE_RELOCATION)
+	public boolean getUseStepwiseRelocation() {
+		return useStepwiseRelocation;
+	}
+
+	@StringSetter(USE_STEPWISE_RELOCATION)
+	public void setUseStepwiseRelocation(boolean value) {
+		this.useStepwiseRelocation = value;
 	}
 
 	/* Graph limits */
