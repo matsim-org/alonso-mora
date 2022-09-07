@@ -30,12 +30,14 @@ public class CbcMpsRelocationSolver implements RelocationSolver {
 	private final File solutionPath;
 
 	private final int timeLimit;
+	private final long randomSeed;
 
-	public CbcMpsRelocationSolver(int timeLimit, File problemPath, File solutionPath) {
+	public CbcMpsRelocationSolver(int timeLimit, File problemPath, File solutionPath, long randomSeed) {
 		this.problemPath = problemPath;
 		this.solutionPath = solutionPath;
 
 		this.timeLimit = timeLimit;
+		this.randomSeed = randomSeed;
 	}
 
 	@Override
@@ -44,8 +46,9 @@ public class CbcMpsRelocationSolver implements RelocationSolver {
 			List<Relocation> relocations = new ArrayList<>(candidates);
 			new MpsRelocationWriter(relocations).write(problemPath);
 
-			new ProcessBuilder("cbc", problemPath.toString(), "sec", String.valueOf(1e-3 * timeLimit), "solve",
-					"solution", solutionPath.toString()).start().waitFor();
+			new ProcessBuilder("cbc", problemPath.toString(), "-randomSeed", String.valueOf(randomSeed),
+					"-randomCbcSeed", String.valueOf(randomSeed), "-seconds", String.valueOf(1e-3 * timeLimit),
+					"-threads", "1", "-solve", "-solution", solutionPath.toString()).start().waitFor();
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(solutionPath)));
 

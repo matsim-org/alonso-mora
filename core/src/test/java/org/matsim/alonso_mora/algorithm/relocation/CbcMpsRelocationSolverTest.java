@@ -34,7 +34,7 @@ public class CbcMpsRelocationSolverTest {
 	public void testTwoVehicesOneDestination() throws IOException {
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
 				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
+				temporaryFolder.newFile("solution"), 0);
 
 		AlonsoMoraVehicle vehicle = Mockito.mock(AlonsoMoraVehicle.class);
 
@@ -52,7 +52,7 @@ public class CbcMpsRelocationSolverTest {
 	public void testOneVehicesTwoDestinations() throws IOException {
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
 				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
+				temporaryFolder.newFile("solution"), 0);
 
 		Link link = Mockito.mock(Link.class);
 
@@ -65,16 +65,16 @@ public class CbcMpsRelocationSolverTest {
 		assertEquals(1, solution.size());
 		assertEquals(relocations.get(0), solution.iterator().next());
 	}
-	
+
 	@Test
 	public void testComplex() throws IOException {
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
 				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
-		
+				temporaryFolder.newFile("solution"), 0);
+
 		Link linkA = Mockito.mock(Link.class);
 		Link linkB = Mockito.mock(Link.class);
-		
+
 		AlonsoMoraVehicle vehicle1 = Mockito.mock(AlonsoMoraVehicle.class);
 		AlonsoMoraVehicle vehicle2 = Mockito.mock(AlonsoMoraVehicle.class);
 		AlonsoMoraVehicle vehicle3 = Mockito.mock(AlonsoMoraVehicle.class);
@@ -89,7 +89,7 @@ public class CbcMpsRelocationSolverTest {
 		Collection<Relocation> solution = solver.solve(relocations);
 
 		assertEquals(2, solution.size());
-		
+
 		List<Relocation> expected = new ArrayList<>(Arrays.asList(relocations.get(0), relocations.get(4)));
 		expected.removeAll(relocations);
 		assertEquals(0, expected.size());
@@ -99,7 +99,7 @@ public class CbcMpsRelocationSolverTest {
 	public void testEmpty() throws IOException {
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
 				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
+				temporaryFolder.newFile("solution"), 0);
 
 		Collection<Relocation> solution = solver.solve(Collections.emptyList());
 

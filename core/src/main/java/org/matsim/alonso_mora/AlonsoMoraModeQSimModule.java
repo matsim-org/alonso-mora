@@ -130,8 +130,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					.getAssignmentSolverParameters();
 
 			return new CbcMpsAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath,
-					solutionPath);
+					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath, solutionPath,
+					getConfig().global().getRandomSeed());
 		})).in(Singleton.class);
 
 		bindModal(GlpkMpsAssignmentSolver.class).toProvider(modalProvider(getter -> {
@@ -147,8 +147,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					.getAssignmentSolverParameters();
 
 			return new GlpkMpsAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath,
-					solutionPath);
+					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath, solutionPath);
 		})).in(Singleton.class);
 
 		switch (amConfig.getAssignmentSolverParameters().getSolverType()) {
@@ -182,7 +181,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			CbcMpsRelocationParameters solverParameters = (CbcMpsRelocationParameters) amConfig
 					.getRelocationSolverParameters();
 
-			return new CbcMpsRelocationSolver(solverParameters.getRuntimeThreshold(), problemPath, solutionPath);
+			return new CbcMpsRelocationSolver(solverParameters.getRuntimeThreshold(), problemPath, solutionPath,
+					getConfig().global().getRandomSeed());
 		})).in(Singleton.class);
 
 		bindModal(GlpkMpsRelocationSolver.class).toProvider(modalProvider(getter -> {
@@ -230,7 +230,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			TravelTimeMatrix matrix = getter.getModal(TravelTimeMatrix.class);
 			TravelTime travelTime = getter.getModal(TravelTime.class);
 			double speedFactor = 1.0;
-			
+
 			return new DrtDetourTravelTimeEstimator((from, to, departureTime) -> {
 				if (from == to) {
 					return 0;

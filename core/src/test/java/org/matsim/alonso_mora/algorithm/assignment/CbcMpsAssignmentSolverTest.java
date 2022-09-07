@@ -50,7 +50,7 @@ public class CbcMpsAssignmentSolverTest {
 	@Test
 	public void testOneVehicleOneRequestExample() throws IOException {
 		AssignmentSolver solver = new CbcMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"), 0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -66,7 +66,7 @@ public class CbcMpsAssignmentSolverTest {
 	@Test
 	public void testTwoIndependentRequests() throws IOException {
 		AssignmentSolver solver = new CbcMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"), 0);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -87,7 +87,7 @@ public class CbcMpsAssignmentSolverTest {
 	@Test
 	public void testTwoRequestsWithOneVehicle() throws IOException {
 		AssignmentSolver solver = new CbcMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"), 0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -112,7 +112,7 @@ public class CbcMpsAssignmentSolverTest {
 	@Test
 	public void testTwoRequestsWithOneVehicleLowPenalty() throws IOException {
 		AssignmentSolver solver = new CbcMpsAssignmentSolver(250.0, 250.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"), 0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
