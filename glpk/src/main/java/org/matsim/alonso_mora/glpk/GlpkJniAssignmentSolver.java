@@ -10,7 +10,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gnu.glpk.GLPK;
 import org.gnu.glpk.GLPKConstants;
 import org.gnu.glpk.SWIGTYPE_p_double;
@@ -32,7 +33,7 @@ import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Sta
 public class GlpkJniAssignmentSolver implements AssignmentSolver {
 	static public final String TYPE = "GlpkJni";
 
-	private static final Logger logger = Logger.getLogger(GlpkJniAssignmentSolver.class);
+	private static final Logger logger = LogManager.getLogger(GlpkJniAssignmentSolver.class);
 
 	private final double unassignmentPenalty;
 	private final double rejectionPenalty;
