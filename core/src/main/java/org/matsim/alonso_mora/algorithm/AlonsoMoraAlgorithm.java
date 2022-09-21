@@ -309,6 +309,12 @@ public class AlonsoMoraAlgorithm {
 								}
 							}
 
+							if (stop.getType().equals(StopType.Relocation)) {
+								// If there was a relocation in the route, it should be finished by now, because
+								// the vehicle is not in relocatingVehicles anymore
+								continue;
+							}
+
 							updatedRoute.add(stop);
 						}
 
@@ -626,14 +632,14 @@ public class AlonsoMoraAlgorithm {
 
 			information.numberOfRelocations++;
 		}
-		
+
 		if (settings.useStepwiseRelocation) {
 			List<AlonsoMoraVehicle> stopVehicles = new ArrayList<>(relocatableVehicles);
 			relocations.forEach(r -> stopVehicles.remove(r.vehicle));
-			
+
 			for (AlonsoMoraVehicle vehicle : stopVehicles) {
-				vehicle.setRoute(
-						Collections.singletonList(new AlonsoMoraStop(StopType.Relocation, vehicle.getNextDiversion(now).link, null)));
+				vehicle.setRoute(Collections.singletonList(
+						new AlonsoMoraStop(StopType.Relocation, vehicle.getNextDiversion(now).link, null)));
 				scheduler.schedule(vehicle, now);
 			}
 		}
