@@ -18,7 +18,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.AlonsoMoraSubmissionEvent;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
@@ -65,7 +66,7 @@ import com.google.common.base.Verify;
  *
  */
 public class AlonsoMoraAlgorithm {
-	private final Logger logger = Logger.getLogger(AlonsoMoraAlgorithm.class);
+	private final Logger logger = LogManager.getLogger(AlonsoMoraAlgorithm.class);
 
 	private RequestGraph requestGraph;
 	private final AssignmentSolver assignmentSolver;

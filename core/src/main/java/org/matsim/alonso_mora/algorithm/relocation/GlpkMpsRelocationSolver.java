@@ -12,7 +12,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
 
 /**
@@ -25,7 +26,7 @@ import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
 public class GlpkMpsRelocationSolver implements RelocationSolver {
 	static public final String TYPE = "GlpkMps";
 
-	private static final Logger logger = Logger.getLogger(GlpkMpsRelocationSolver.class);
+	private static final Logger logger = LogManager.getLogger(GlpkMpsRelocationSolver.class);
 
 	private final File problemPath;
 	private final File solutionPath;
