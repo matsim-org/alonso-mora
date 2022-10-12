@@ -1,9 +1,5 @@
 package org.matsim.alonso_mora.shifts;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
@@ -11,10 +7,14 @@ import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.Const
 import org.matsim.alonso_mora.algorithm.function.RouteTracker;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
-import org.matsim.contrib.drt.extension.shifts.schedule.OperationalStop;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.OperationalStop;
 import org.matsim.contrib.dvrp.schedule.Schedule;
 import org.matsim.contrib.dvrp.schedule.StayTask;
 import org.matsim.contrib.dvrp.schedule.Task;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Constraint that makes the Alonso-Mora dispatcher take into account shifts and

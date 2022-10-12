@@ -1,11 +1,6 @@
 package org.matsim.alonso_mora.shifts;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.google.common.base.Verify;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
@@ -14,16 +9,12 @@ import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
 import org.matsim.alonso_mora.scheduling.WaitForStopTask;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.contrib.drt.extension.shifts.schedule.ShiftBreakTask;
-import org.matsim.contrib.drt.extension.shifts.schedule.ShiftChangeOverTask;
-import org.matsim.contrib.drt.extension.shifts.schedule.WaitForShiftStayTask;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftBreakTask;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftChangeOverTask;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.WaitForShiftStayTask;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
-import org.matsim.contrib.drt.schedule.DrtDriveTask;
-import org.matsim.contrib.drt.schedule.DrtStayTask;
-import org.matsim.contrib.drt.schedule.DrtStopTask;
-import org.matsim.contrib.drt.schedule.DrtTaskFactory;
-import org.matsim.contrib.drt.schedule.DrtTaskType;
+import org.matsim.contrib.drt.schedule.*;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.path.VrpPathWithTravelData;
@@ -39,7 +30,11 @@ import org.matsim.contrib.dvrp.util.LinkTimePair;
 import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelTime;
 
-import com.google.common.base.Verify;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This class translates a sequence of pickups and dropoffs as proposed by the

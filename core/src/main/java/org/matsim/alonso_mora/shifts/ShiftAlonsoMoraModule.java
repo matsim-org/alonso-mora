@@ -8,10 +8,10 @@ import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
 import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.contrib.drt.extension.shifts.config.DrtWithShiftsConfigGroup;
-import org.matsim.contrib.drt.extension.shifts.dispatcher.DrtShiftDispatcher;
-import org.matsim.contrib.drt.extension.shifts.optimizer.ShiftDrtOptimizer;
-import org.matsim.contrib.drt.extension.shifts.schedule.ShiftDrtStayTaskEndTimeCalculator;
+import org.matsim.contrib.drt.extension.operations.DrtWithOperationsConfigGroup;
+import org.matsim.contrib.drt.extension.operations.shifts.dispatcher.DrtShiftDispatcher;
+import org.matsim.contrib.drt.extension.operations.shifts.optimizer.ShiftDrtOptimizer;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftDrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
@@ -22,10 +22,10 @@ import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelTime;
 
 public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
-	private final DrtWithShiftsConfigGroup drtConfig;
+	private final DrtWithOperationsConfigGroup drtConfig;
 	private final AlonsoMoraConfigGroup amConfig;
 
-	public ShiftAlonsoMoraModule(DrtWithShiftsConfigGroup drtConfig, AlonsoMoraConfigGroup amConfig) {
+	public ShiftAlonsoMoraModule(DrtWithOperationsConfigGroup drtConfig, AlonsoMoraConfigGroup amConfig) {
 		super(drtConfig.getMode());
 		this.drtConfig = drtConfig;
 		this.amConfig = amConfig;
@@ -39,8 +39,8 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 
 		// TODO: This can become a general binding in DRT
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
-			return new ShiftDrtStayTaskEndTimeCalculator(drtConfig.getDrtShiftParams(),
-					new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropoffRequests, pickupRequests) -> drtConfig.getStopDuration()));
+			return new ShiftDrtStayTaskEndTimeCalculator(drtConfig.getDrtOperationsParams().getShiftsParams().orElseThrow(),
+					new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropoffRequests, pickupRequests) -> drtConfig.stopDuration));
 		}));
 
 		bindModal(OperationalVoter.class).toProvider(modalProvider(getter -> {
@@ -68,7 +68,7 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
 
-			return new ShiftAlonsoMoraScheduler(taskFactory, drtConfig.getStopDuration(),
+			return new ShiftAlonsoMoraScheduler(taskFactory, drtConfig.stopDuration,
 					amConfig.getCheckDeterminsticTravelTimes(), amConfig.getRerouteDuringScheduling(), travelTime,
 					network, endTimeCalculator, router, operationalVoter);
 		}));

@@ -202,19 +202,19 @@ public class RunNewYork {
 		MultiModeDrtConfigGroup drtConfig = new MultiModeDrtConfigGroup();
 		config.addModule(drtConfig);
 
-		DrtConfigGroup modeConfig = new DrtConfigGroup() //
-				.setMode(TransportMode.drt) //
-				.setMaxTravelTimeAlpha(detourFactor) //
-				.setMaxTravelTimeBeta(stopDuration) //
-				.setMaxWaitTime(maximumWaitingTime + stopDuration) //
-				.setStopDuration(stopDuration) //
-				.setRejectRequestIfMaxWaitOrTravelTimeViolated(true) //
-				.setUseModeFilteredSubnetwork(false) //
-				.setIdleVehiclesReturnToDepots(false) //
-				.setOperationalScheme(DrtConfigGroup.OperationalScheme.door2door) //
-				.setPlotDetailedCustomerStats(true) //
-				.setMaxWalkDistance(1000.) //
-				.setNumberOfThreads(threads);
+		DrtConfigGroup modeConfig = new DrtConfigGroup();
+		modeConfig.mode = TransportMode.drt;
+		modeConfig.maxTravelTimeAlpha = detourFactor;
+		modeConfig.maxTravelTimeBeta = stopDuration;
+		modeConfig.maxWaitTime = maximumWaitingTime + stopDuration;
+		modeConfig.stopDuration = stopDuration;
+		modeConfig.rejectRequestIfMaxWaitOrTravelTimeViolated = true;
+		modeConfig.useModeFilteredSubnetwork = false;
+		modeConfig.idleVehiclesReturnToDepots = false;
+		modeConfig.operationalScheme = DrtConfigGroup.OperationalScheme.door2door;
+		modeConfig.plotDetailedCustomerStats = true;
+		modeConfig.maxWalkDistance = 1000.;
+		modeConfig.numberOfThreads = threads;
 
 		modeConfig.addParameterSet(new ExtensiveInsertionSearchParams());
 		drtConfig.addParameterSet(modeConfig);

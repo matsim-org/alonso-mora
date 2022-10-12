@@ -192,7 +192,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			Network network = getter.getModal(Network.class);
 			TravelTime travelTime = getter.getModal(TravelTime.class);
 
-			return new ParallelLeastCostPathCalculator(drtConfig.getNumberOfThreads(), factory, network,
+			return new ParallelLeastCostPathCalculator(drtConfig.numberOfThreads, factory, network,
 					new OnlyTimeDependentTravelDisutility(travelTime), travelTime);
 		}));
 
@@ -295,7 +295,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			CongestionMitigationParameters congestionParameters = amConfig.getCongestionMitigationParameters();
 
 			return new DefaultAlonsoMoraFunction(travelTimeEstimator, sequenceGeneratorFactory,
-					drtConfig.getStopDuration(), congestionParameters.getAllowPickupViolations(),
+					drtConfig.stopDuration, congestionParameters.getAllowPickupViolations(),
 					congestionParameters.getAllowPickupsWithDropoffViolations(),
 					amConfig.getCheckDeterminsticTravelTimes(), objective, constraint, amConfig.getViolationFactor(),
 					amConfig.getViolationOffset(), amConfig.getPreferNonViolation());
@@ -305,7 +305,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		bindModal(Constraint.class).toInstance(new NoopConstraint());
 
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
-			return new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropOffRequests, pickupRequests) -> drtConfig.getStopDuration());
+			return new DrtStayTaskEndTimeCalculator((dvrpVehicle, dropOffRequests, pickupRequests) -> drtConfig.stopDuration);
 		}));
 
 		bindModal(AlonsoMoraScheduler.class).toProvider(modalProvider(getter -> {
@@ -318,7 +318,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
 
-			return new DefaultAlonsoMoraScheduler(taskFactory, drtConfig.getStopDuration(),
+			return new DefaultAlonsoMoraScheduler(taskFactory, drtConfig.stopDuration,
 					amConfig.getCheckDeterminsticTravelTimes(), amConfig.getRerouteDuringScheduling(), travelTime,
 					network, endTimeCalculator, router, operationalVoter);
 		}));
@@ -329,7 +329,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			Double rebalancingInterval = null;
 
 			if (drtConfig.getRebalancingParams().isPresent()) {
-				rebalancingInterval = (double) drtConfig.getRebalancingParams().get().getInterval();
+				rebalancingInterval = (double) drtConfig.getRebalancingParams().get().interval;
 			}
 
 			return new StandardRebalancer( //
@@ -361,7 +361,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(AlonsoMoraVehicleFactory.class), //
 					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
 					getter.getModal(TravelTimeEstimator.class), //
-					drtConfig.getStopDuration(), //
+					drtConfig.stopDuration, //
 					new AlgorithmSettings(amConfig));
 		}));
 
@@ -381,7 +381,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
 					getter.getModal(LeastCostPathCalculator.class), //
 					getter.getModal(TravelTime.class), //
-					drtConfig.getAdvanceRequestPlanningHorizon(), //
+					drtConfig.advanceRequestPlanningHorizon, //
 					getter.getModal(InformationCollector.class) //
 			);
 		}));
