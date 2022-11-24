@@ -32,6 +32,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.extension.operations.DrtOperationsParams;
 import org.matsim.contrib.drt.extension.operations.DrtWithOperationsConfigGroup;
 import org.matsim.contrib.drt.extension.operations.operationFacilities.*;
+import org.matsim.contrib.drt.extension.operations.shifts.config.ShiftsParams;
 import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDrtModeModule;
 import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDrtModeOptimizerQSimModule;
 import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDvrpFleetQsimModule;
@@ -137,6 +138,12 @@ public class AlonsoMoraExamplesIT {
 		DrtOperationsParams operationsParams = (DrtOperationsParams) drtConfig.createParameterSet(DrtOperationsParams.SET_NAME);
 		drtConfig.addParameterSet(operationsParams);
 
+		ShiftsParams shiftParams = new ShiftsParams();
+		OperationFacilitiesParams operationFacilitiesParams = new OperationFacilitiesParams();
+
+		operationsParams.addParameterSet(shiftParams);
+		operationsParams.addParameterSet(operationFacilitiesParams);
+
 		// Load scenario
 		Scenario scenario = ScenarioUtils.createScenario(config);
 		scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class,
@@ -212,6 +219,7 @@ public class AlonsoMoraExamplesIT {
 
 		for (DrtConfigGroup drtCfg : MultiModeDrtConfigGroup.get(config).getModalElements()) {
 			controller.addOverridingModule(new ShiftDrtModeModule(drtCfg));
+			controller.addOverridingQSimModule(new OperationFacilitiesQSimModule(drtCfg));
 			controller.addOverridingQSimModule(new DrtModeQSimModule(drtCfg, new ShiftDrtModeOptimizerQSimModule(drtCfg)));
 			controller.addOverridingQSimModule(new ShiftDvrpFleetQsimModule(drtCfg.getMode()));
 		}

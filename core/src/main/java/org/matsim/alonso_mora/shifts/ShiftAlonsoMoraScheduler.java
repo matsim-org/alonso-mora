@@ -6,6 +6,8 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
+import org.matsim.alonso_mora.scheduling.AlonsoMoraTaskFactory;
+import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler;
 import org.matsim.alonso_mora.scheduling.WaitForStopTask;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -60,10 +62,12 @@ public class ShiftAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
     private final StayTaskEndTimeCalculator endTimeCalculator;
 
+    private final AlonsoMoraTaskFactory alonsoMoraTaskFactory;
+
     public ShiftAlonsoMoraScheduler(DrtTaskFactory taskFactory, double stopDuration,
                                     boolean checkDeterminsticTravelTimes, boolean reroutingDuringScheduling, TravelTime travelTime,
                                     Network network, StayTaskEndTimeCalculator endTimeCalculator, LeastCostPathCalculator router,
-                                    org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter operationalVoter) {
+                                    DefaultAlonsoMoraScheduler.OperationalVoter operationalVoter, AlonsoMoraTaskFactory alonsoMoraTaskFactory) {
         this.taskFactory = taskFactory;
         this.stopDuration = stopDuration;
         this.checkDeterminsticTravelTimes = checkDeterminsticTravelTimes;
@@ -72,6 +76,7 @@ public class ShiftAlonsoMoraScheduler implements AlonsoMoraScheduler {
         this.travelTime = travelTime;
         this.router = router;
         this.operationalVoter = operationalVoter;
+        this.alonsoMoraTaskFactory = alonsoMoraTaskFactory;
     }
 
     /**
@@ -262,7 +267,7 @@ public class ShiftAlonsoMoraScheduler implements AlonsoMoraScheduler {
                     double expectedStartTime = stop.getRequest().getEarliestPickupTime() - stopDuration;
 
                     if (expectedStartTime > currentTask.getEndTime()) {
-                        currentTask = new WaitForStopTask(currentTask.getEndTime(), expectedStartTime, currentLink);
+                        currentTask = alonsoMoraTaskFactory.createWaitForStopTask(currentTask.getEndTime(), expectedStartTime, currentLink);
                         schedule.addTask(currentTask);
                     }
                 }
