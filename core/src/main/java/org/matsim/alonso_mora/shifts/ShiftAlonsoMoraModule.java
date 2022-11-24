@@ -5,7 +5,9 @@ import org.matsim.alonso_mora.AlonsoMoraOptimizer;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicleFactory;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.Constraint;
 import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
+import org.matsim.alonso_mora.scheduling.AlonsoMoraTaskFactory;
 import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter;
+import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraTaskFactory;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.extension.operations.DrtWithOperationsConfigGroup;
@@ -58,6 +60,8 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 				modalProvider((getter) -> new ShiftDrtOptimizer(getter.getModal(AlonsoMoraOptimizer.class),
 						getter.getModal(DrtShiftDispatcher.class), getter.getModal(ScheduleTimingUpdater.class))));
 
+		bindModal(AlonsoMoraTaskFactory.class).toInstance(new DefaultAlonsoMoraTaskFactory());
+
 		bindModal(AlonsoMoraScheduler.class).toProvider(modalProvider(getter -> {
 			StayTaskEndTimeCalculator endTimeCalculator = getter.getModal(StayTaskEndTimeCalculator.class);
 			DrtTaskFactory taskFactory = getter.getModal(DrtTaskFactory.class);
@@ -70,7 +74,7 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 
 			return new ShiftAlonsoMoraScheduler(taskFactory, drtConfig.stopDuration,
 					amConfig.getCheckDeterminsticTravelTimes(), amConfig.getRerouteDuringScheduling(), travelTime,
-					network, endTimeCalculator, router, operationalVoter);
+					network, endTimeCalculator, router, operationalVoter, getter.getModal(AlonsoMoraTaskFactory.class));
 		}));
 	}
 }

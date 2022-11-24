@@ -56,10 +56,12 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 	private final StayTaskEndTimeCalculator endTimeCalculator;
 
+	private final AlonsoMoraTaskFactory alonsoMoraTaskFactory;
+
 	public DefaultAlonsoMoraScheduler(DrtTaskFactory taskFactory, double stopDuration,
-			boolean checkDeterminsticTravelTimes, boolean reroutingDuringScheduling, TravelTime travelTime,
-			Network network, StayTaskEndTimeCalculator endTimeCalculator, LeastCostPathCalculator router,
-			OperationalVoter operationalVoter) {
+									  boolean checkDeterminsticTravelTimes, boolean reroutingDuringScheduling, TravelTime travelTime,
+									  Network network, StayTaskEndTimeCalculator endTimeCalculator, LeastCostPathCalculator router,
+									  OperationalVoter operationalVoter, AlonsoMoraTaskFactory alonsoMoraTaskFactory) {
 		this.taskFactory = taskFactory;
 		this.stopDuration = stopDuration;
 		this.checkDeterminsticTravelTimes = checkDeterminsticTravelTimes;
@@ -68,6 +70,7 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 		this.travelTime = travelTime;
 		this.router = router;
 		this.operationalVoter = operationalVoter;
+		this.alonsoMoraTaskFactory = alonsoMoraTaskFactory;
 	}
 
 	/**
@@ -258,7 +261,7 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 					double expectedStartTime = stop.getRequest().getEarliestPickupTime() - stopDuration;
 
 					if (expectedStartTime > currentTask.getEndTime()) {
-						currentTask = new WaitForStopTask(currentTask.getEndTime(), expectedStartTime, currentLink);
+						currentTask = alonsoMoraTaskFactory.createWaitForStopTask(currentTask.getEndTime(), expectedStartTime, currentLink);
 						schedule.addTask(currentTask);
 					}
 				}
