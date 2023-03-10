@@ -410,11 +410,16 @@ public class AlonsoMoraAlgorithm {
 
 		information.assignmentStartTime = System.nanoTime();
 		Solution solution = assignmentSolver.solve(vehicleGraphs.values().stream().flatMap(v -> v.stream()));
+
 		information.assignmentEndTime = System.nanoTime();
 		information.solutionStatus = solution.status;
 
-		processAssignedRequests(solution, now, information);
-		processAssignedVehicles(solution, now, information);
+		if (solution.trips.size() != 0) {
+			processAssignedRequests(solution, now, information);
+			processAssignedVehicles(solution, now, information);
+		} else {
+			this.logger.warn("GLPK problem null solution, no assignment was performed");
+		}
 	}
 
 	/**
