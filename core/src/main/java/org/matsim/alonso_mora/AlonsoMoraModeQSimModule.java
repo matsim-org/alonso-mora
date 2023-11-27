@@ -59,9 +59,9 @@ import org.matsim.contrib.drt.optimizer.rebalancing.RebalancingStrategy;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
-import org.matsim.contrib.drt.schedule.StopDurationEstimator;
 import org.matsim.contrib.drt.scheduler.DrtScheduleInquiry;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
+import org.matsim.contrib.drt.stops.StopTimeCalculator;
 import org.matsim.contrib.dvrp.fleet.Fleet;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
@@ -333,7 +333,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		bindModal(Constraint.class).toInstance(new NoopConstraint());
 
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
-			return new DrtStayTaskEndTimeCalculator(getter.getModal(StopDurationEstimator.class));
+			return new DrtStayTaskEndTimeCalculator(getter.getModal(StopTimeCalculator.class));
 		}));
 
 		bindModal(AlonsoMoraScheduler.class).toProvider(modalProvider(getter -> {
@@ -409,7 +409,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
 					getter.getModal(LeastCostPathCalculator.class), //
 					getter.getModal(TravelTime.class), //
-					drtConfig.advanceRequestPlanningHorizon, //
+					amConfig.getPlanningHorizon(), //
 					getter.getModal(InformationCollector.class) //
 			);
 		}));

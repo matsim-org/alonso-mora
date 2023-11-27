@@ -36,10 +36,10 @@ import org.matsim.contrib.dvrp.run.DvrpQSimComponents;
 import org.matsim.core.config.CommandLine;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
-import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
 import org.matsim.core.config.groups.QSimConfigGroup.StarttimeInterpretation;
-import org.matsim.core.config.groups.StrategyConfigGroup.StrategySettings;
+import org.matsim.core.config.groups.ReplanningConfigGroup.StrategySettings;
+import org.matsim.core.config.groups.ScoringConfigGroup.ActivityParams;
+import org.matsim.core.config.groups.ScoringConfigGroup.ModeParams;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.scenario.ScenarioUtils;
@@ -165,9 +165,9 @@ public class RunNewYork {
 		}
 
 		// Set up config
-		config.controler().setOutputDirectory(outputPath);
-		config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-		config.controler().setLastIteration(0);
+		config.controller().setOutputDirectory(outputPath);
+		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controller().setLastIteration(0);
 
 		config.qsim().setNumberOfThreads(Math.min(12, threads));
 		config.global().setNumberOfThreads(threads);
@@ -181,20 +181,20 @@ public class RunNewYork {
 		config.qsim().setEndTime(endTime);
 
 		ModeParams modeParams = new ModeParams("drt");
-		config.planCalcScore().addModeParams(modeParams);
+		config.scoring().addModeParams(modeParams);
 
 		ActivityParams genericParams = new ActivityParams("generic");
 		genericParams.setScoringThisActivityAtAll(false);
-		config.planCalcScore().addActivityParams(genericParams);
+		config.scoring().addActivityParams(genericParams);
 
 		ActivityParams interactionParams = new ActivityParams("drt interaction");
 		interactionParams.setScoringThisActivityAtAll(false);
-		config.planCalcScore().addActivityParams(interactionParams);
+		config.scoring().addActivityParams(interactionParams);
 
 		StrategySettings keepSettings = new StrategySettings();
 		keepSettings.setStrategyName("BestScore");
 		keepSettings.setWeight(1.0);
-		config.strategy().addStrategySettings(keepSettings);
+		config.replanning().addStrategySettings(keepSettings);
 
 		DvrpConfigGroup dvrpConfig = new DvrpConfigGroup();
 		config.addModule(dvrpConfig);

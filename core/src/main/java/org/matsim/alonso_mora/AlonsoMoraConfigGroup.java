@@ -226,6 +226,22 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 	public void setCandidateVehiclesPerRequest(int value) {
 		this.candidateVehiclesPerRequest = value;
 	}
+	
+	private final static String PLANNING_HORIZON = "planningHorizon";
+	private final static String PLANNING_HORIZON_COMMENT = "Defines how much in advance requests are considered for scheduling";
+	
+	@PositiveOrZero
+	private double planningHorizon = 0.0;
+
+	@StringGetter(PLANNING_HORIZON)
+	public double getPlanningHorizon() {
+		return planningHorizon;
+	}
+
+	@StringSetter(PLANNING_HORIZON)
+	public void setPlanningHorizon(double value) {
+		this.planningHorizon = value;
+	}
 
 	@Override
 	public Map<String, String> getComments() {
@@ -252,6 +268,7 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 		comments.put(VIOLATION_OFFSET, VIOLATION_OFFSET_COMMENT);
 		comments.put(PREFER_NON_VIOLATION, PREFER_NON_VIOLATION_COMMENT);
 		comments.put(CANDIDATE_VEHICLES_PER_REQUEST, CANDIDATE_VEHICLES_PER_REQUEST_COMMENT);
+		comments.put(PLANNING_HORIZON, PLANNING_HORIZON_COMMENT);
 		return comments;
 	}
 

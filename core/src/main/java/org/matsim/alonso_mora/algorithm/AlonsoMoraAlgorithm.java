@@ -227,7 +227,7 @@ public class AlonsoMoraAlgorithm {
 
 				for (DrtRequest drtRequest : request.getDrtRequests()) {
 					eventsManager.processEvent(new PassengerRequestRejectedEvent(now, mode, drtRequest.getId(),
-							drtRequest.getPassengerId(), "queue time exeeded"));
+							drtRequest.getPassengerIds(), "queue time exeeded"));
 				}
 
 				numberOfRejectedRequests++;
@@ -480,7 +480,7 @@ public class AlonsoMoraAlgorithm {
 				/* For each DRT request, we create a scheduling event */
 				for (AcceptedDrtRequest drtRequest : request.getAcceptedDrtRequests()) {
 					eventsManager.processEvent(new PassengerRequestScheduledEvent(now, mode, drtRequest.getId(),
-							drtRequest.getPassengerId(), trip.getVehicle().getVehicle().getId(), expectedPickupTime,
+							drtRequest.getPassengerIds(), trip.getVehicle().getVehicle().getId(), expectedPickupTime,
 							expectedDropoffTime));
 				}
 			}

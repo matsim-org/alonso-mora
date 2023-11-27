@@ -99,8 +99,8 @@ public class AlonsoMoraExamplesIT {
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
 		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
 
-		config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-		config.controler().setOutputDirectory(utils.getOutputDirectory());
+		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controller().setOutputDirectory(utils.getOutputDirectory());
 
 		// Remove DRT rebalancer as we want to use AM rebalancer
 		DrtConfigGroup drtConfig = MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();
@@ -125,9 +125,9 @@ public class AlonsoMoraExamplesIT {
 		var expectedStats = Stats.newBuilder() //
 				.rejectionRate(0.2) //
 				.rejections(78) //
-				.waitAverage(215.88) //
-				.inVehicleTravelTimeMean(347.02) //
-				.totalTravelTimeMean(562.9) //
+				.waitAverage(215.41) //
+				.inVehicleTravelTimeMean(346.55) //
+				.totalTravelTimeMean(561.97) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
@@ -143,8 +143,8 @@ public class AlonsoMoraExamplesIT {
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
 		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
 
-		config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-		config.controler().setOutputDirectory(utils.getOutputDirectory());
+		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controller().setOutputDirectory(utils.getOutputDirectory());
 
 		// Remove DRT rebalancer as we want to use AM rebalancer
 		DrtWithOperationsConfigGroup drtConfig = (DrtWithOperationsConfigGroup) MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();

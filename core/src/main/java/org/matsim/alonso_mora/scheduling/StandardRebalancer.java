@@ -60,7 +60,7 @@ public class StandardRebalancer implements MobsimBeforeSimStepListener {
 			for (Relocation r : relocations) {
 				Link currentLink = ((DrtStayTask) r.vehicle.getSchedule().getCurrentTask()).getLink();
 				if (currentLink != r.link) {
-					relocator.relocateVehicle(r.vehicle, r.link);
+					relocator.relocateVehicle(r.vehicle, r.link, EmptyVehicleRelocator.RELOCATE_VEHICLE_TASK_TYPE);
 				}
 			}
 		}

@@ -128,8 +128,8 @@ public class DiversionTest {
 		{
 			/* Create some necessary configuration for the test */
 
-			config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-			config.controler().setLastIteration(0);
+			config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+			config.controller().setLastIteration(0);
 
 			config.qsim().setStartTime(0.0);
 			config.qsim().setSimStarttimeInterpretation(StarttimeInterpretation.onlyUseStarttime);
@@ -454,8 +454,8 @@ public class DiversionTest {
 		{
 			/* Create some necessary configuration for the test */
 
-			config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-			config.controler().setLastIteration(0);
+			config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+			config.controller().setLastIteration(0);
 
 			config.qsim().setStartTime(0.0);
 			config.qsim().setSimStarttimeInterpretation(StarttimeInterpretation.onlyUseStarttime);

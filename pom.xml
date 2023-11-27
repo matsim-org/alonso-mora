@@ -16,7 +16,7 @@ to the MATSim framework.</description>
 	<properties>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<matsim.version>15.0</matsim.version>
+		<matsim.version>16.0-PR2966</matsim.version>
 	</properties>
 
 	<repositories>
