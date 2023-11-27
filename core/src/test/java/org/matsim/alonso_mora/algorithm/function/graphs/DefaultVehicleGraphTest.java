@@ -19,6 +19,7 @@ import org.matsim.alonso_mora.algorithm.graphs.DefaultVehicleGraph;
 import org.matsim.alonso_mora.algorithm.graphs.RequestGraph;
 import org.matsim.alonso_mora.algorithm.graphs.VehicleGraph;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
@@ -396,6 +397,12 @@ public class DefaultVehicleGraphTest {
 			return null;
 		}
 
+		@Override
+		public Collection<AcceptedDrtRequest> getAcceptedDrtRequests() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
 		@Override
 		public int getSize() {
 			// TODO Auto-generated method stub

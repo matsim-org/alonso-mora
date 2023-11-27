@@ -18,7 +18,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.AlonsoMoraSubmissionEvent;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
@@ -36,6 +37,7 @@ import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver.Relocation;
 import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DefaultDrtStopTask;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
@@ -65,7 +67,7 @@ import com.google.common.base.Verify;
  *
  */
 public class AlonsoMoraAlgorithm {
-	private final Logger logger = Logger.getLogger(AlonsoMoraAlgorithm.class);
+	private final Logger logger = LogManager.getLogger(AlonsoMoraAlgorithm.class);
 
 	private RequestGraph requestGraph;
 	private final AssignmentSolver assignmentSolver;
@@ -474,9 +476,9 @@ public class AlonsoMoraAlgorithm {
 						}
 					}
 				}
-
+				
 				/* For each DRT request, we create a scheduling event */
-				for (DrtRequest drtRequest : request.getDrtRequests()) {
+				for (AcceptedDrtRequest drtRequest : request.getAcceptedDrtRequests()) {
 					eventsManager.processEvent(new PassengerRequestScheduledEvent(now, mode, drtRequest.getId(),
 							drtRequest.getPassengerId(), trip.getVehicle().getVehicle().getId(), expectedPickupTime,
 							expectedDropoffTime));

@@ -1,7 +1,7 @@
 package org.matsim.alonso_mora.shifts;
 
 import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraVehicle;
-import org.matsim.contrib.drt.extension.shifts.schedule.OperationalStop;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.OperationalStop;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.schedule.Schedule;
 import org.matsim.contrib.dvrp.schedule.Schedule.ScheduleStatus;

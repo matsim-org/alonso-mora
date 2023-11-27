@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
 import org.matsim.contrib.dvrp.schedule.Task.TaskStatus;
@@ -26,6 +27,7 @@ import com.google.common.base.Verify;
  */
 public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 	private final List<DrtRequest> drtRequests;
+	private List<AcceptedDrtRequest> acceptedDrtRequests;
 
 	private DrtStopTask pickupTask;
 	private DrtStopTask dropoffTask;
@@ -169,7 +171,16 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 	public Collection<DrtRequest> getDrtRequests() {
 		return drtRequests;
 	}
-
+	
+	public Collection<AcceptedDrtRequest> getAcceptedDrtRequests() {
+		if (acceptedDrtRequests == null) {
+			acceptedDrtRequests = drtRequests.stream().map(AcceptedDrtRequest::createFromOriginalRequest)
+					.collect(Collectors.toList());
+		}
+		
+		return acceptedDrtRequests;
+	}
+	
 	@Override
 	public void setVehicle(AlonsoMoraVehicle vehicle) {
 		this.vehicle = vehicle;

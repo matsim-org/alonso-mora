@@ -12,7 +12,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Solves the relocation problem as described by Alonso-Mora et al. using the
@@ -24,7 +25,7 @@ import org.apache.log4j.Logger;
 public class CbcMpsRelocationSolver implements RelocationSolver {
 	static public final String TYPE = "CbcMps";
 
-	private final static Logger logger = Logger.getLogger(CbcMpsRelocationSolver.class);
+	private final static Logger logger = LogManager.getLogger(CbcMpsRelocationSolver.class);
 
 	private final File problemPath;
 	private final File solutionPath;
