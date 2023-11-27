@@ -1,10 +1,10 @@
 package org.matsim.alonso_mora.shifts;
 
 import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter;
-import org.matsim.contrib.drt.extension.shifts.schedule.OperationalStop;
-import org.matsim.contrib.drt.extension.shifts.schedule.ShiftBreakTask;
-import org.matsim.contrib.drt.extension.shifts.schedule.ShiftChangeOverTask;
-import org.matsim.contrib.drt.extension.shifts.scheduler.ShiftTaskScheduler;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.OperationalStop;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftBreakTask;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftChangeOverTask;
+import org.matsim.contrib.drt.extension.operations.shifts.scheduler.ShiftTaskScheduler;
 import org.matsim.contrib.drt.schedule.DrtDriveTask;
 import org.matsim.contrib.drt.schedule.DrtTaskType;
 import org.matsim.contrib.dvrp.schedule.Task;

@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Status;
 
@@ -27,7 +28,7 @@ import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Sta
 public class GlpkMpsAssignmentSolver implements AssignmentSolver {
 	static public final String TYPE = "GlpkMps";
 
-	private static final Logger logger = Logger.getLogger(GlpkMpsAssignmentSolver.class);
+	private static final Logger logger = LogManager.getLogger(GlpkMpsAssignmentSolver.class);
 
 	private final double unassignmentPenalty;
 	private final double rejectionPenalty;

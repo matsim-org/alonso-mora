@@ -12,8 +12,8 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.contrib.drt.extension.shifts.schedule.WaitForShiftStayTask;
-import org.matsim.contrib.drt.passenger.DrtRequest;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.WaitForShiftStayTask;
+import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.schedule.DrtDriveTask;
 import org.matsim.contrib.drt.schedule.DrtStayTask;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
@@ -121,13 +121,13 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 					// another task with this request to the vehicle's schedule, this should not be
 					// here. Most likely, this is an error in the TravelFunction.
 
-					for (DrtRequest drtRequest : stop.getRequest().getDrtRequests()) {
+					for (AcceptedDrtRequest drtRequest : stop.getRequest().getAcceptedDrtRequests()) {
 						Verify.verify(!stopTask.getDropoffRequests().containsKey(drtRequest.getId()));
 					}
 
 					break;
 				case Pickup:
-					for (DrtRequest drtRequest : stop.getRequest().getDrtRequests()) {
+					for (AcceptedDrtRequest drtRequest : stop.getRequest().getAcceptedDrtRequests()) {
 						Verify.verify(!stopTask.getPickupRequests().containsKey(drtRequest.getId()));
 					}
 
@@ -288,7 +288,7 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 				// Add requests to the stop task
 
 				if (stop.getType().equals(StopType.Pickup)) {
-					stop.getRequest().getDrtRequests().forEach(stopTask::addPickupRequest);
+					stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addPickupRequest);
 					stop.getRequest().setPickupTask(vehicle, stopTask);
 
 					if (checkDeterminsticTravelTimes) {
@@ -298,7 +298,7 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 								"Checking for determinstic travel times and found mismatch between expected stop time and planned stop time.");
 					}
 				} else if (stop.getType().equals(StopType.Dropoff)) {
-					stop.getRequest().getDrtRequests().forEach(stopTask::addDropoffRequest);
+					stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addDropoffRequest);
 					stop.getRequest().setDropoffTask(vehicle, stopTask);
 
 					if (checkDeterminsticTravelTimes) {

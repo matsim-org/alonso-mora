@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
@@ -33,7 +34,7 @@ import gurobi.GurobiJni;
 public class GurobiAssignmentSolver implements AssignmentSolver {
 	public static final String TYPE = "Gurobi";
 
-	private static final Logger logger = Logger.getLogger(GurobiAssignmentSolver.class);
+	private static final Logger logger = LogManager.getLogger(GurobiAssignmentSolver.class);
 
 	private final double unassignmentPenalty;
 	private final double rejectionPenalty;

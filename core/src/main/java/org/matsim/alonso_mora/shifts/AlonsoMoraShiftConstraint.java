@@ -11,7 +11,7 @@ import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.Const
 import org.matsim.alonso_mora.algorithm.function.RouteTracker;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
-import org.matsim.contrib.drt.extension.shifts.schedule.OperationalStop;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.OperationalStop;
 import org.matsim.contrib.dvrp.schedule.Schedule;
 import org.matsim.contrib.dvrp.schedule.StayTask;
 import org.matsim.contrib.dvrp.schedule.Task;

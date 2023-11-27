@@ -7,7 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gnu.glpk.GLPK;
 import org.gnu.glpk.GLPKConstants;
 import org.gnu.glpk.SWIGTYPE_p_double;
@@ -26,7 +27,7 @@ import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver;
 public class GlpkJniRelocationSolver implements RelocationSolver {
 	static public final String TYPE = "GlpkJni";
 
-	private static final Logger logger = Logger.getLogger(GlpkJniRelocationSolver.class);
+	private static final Logger logger = LogManager.getLogger(GlpkJniRelocationSolver.class);
 
 	@Override
 	public Collection<Relocation> solve(List<Relocation> candidates) {
