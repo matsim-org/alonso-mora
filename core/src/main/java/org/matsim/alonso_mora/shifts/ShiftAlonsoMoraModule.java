@@ -16,6 +16,7 @@ import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.drt.stops.StopTimeCalculator;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater;
@@ -71,8 +72,9 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 			Network network = getter.getModal(Network.class);
 
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
-
-			return new ShiftAlonsoMoraScheduler(taskFactory, drtConfig.stopDuration,
+			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
+			
+			return new ShiftAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.stopDuration,
 					amConfig.checkDeterminsticTravelTimes, amConfig.rerouteDuringScheduling, travelTime, network,
 					endTimeCalculator, router, operationalVoter);
 		}));
