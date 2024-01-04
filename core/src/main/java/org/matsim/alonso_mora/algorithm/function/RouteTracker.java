@@ -13,6 +13,8 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.schedule.DrtDriveTask;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
+import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.schedule.DriveTask;
 
@@ -24,7 +26,10 @@ import org.matsim.contrib.dvrp.schedule.DriveTask;
  */
 public class RouteTracker {
 	private final TravelTimeEstimator estimator;
-	private final double stopDuration;
+	private final AlonsoMoraVehicle vehicle;
+
+	private final PassengerStopDurationProvider stopDurationProvider;
+	private final double vehicleStopDuration;
 
 	private final int initialOccupancy;
 	private final double initialDepartureTime;
@@ -37,26 +42,32 @@ public class RouteTracker {
 	private final Map<AlonsoMoraRequest, Double> requiredPickupTimes;
 	private final Map<AlonsoMoraRequest, Double> requiredDropoffTimes;
 
-	public RouteTracker(TravelTimeEstimator estimator, double stopDuration, int initialOccupancy,
+	public RouteTracker(AlonsoMoraVehicle vehicle, TravelTimeEstimator estimator,
+			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration, int initialOccupancy,
 			double initialDepartureTime, Optional<Link> initialLink) {
 		this.estimator = estimator;
-		this.stopDuration = stopDuration;
+		this.stopDurationProvider = stopDurationProvider;
 		this.initialDepartureTime = initialDepartureTime;
 		this.initialOccupancy = initialOccupancy;
 		this.initialLink = initialLink;
+		this.vehicleStopDuration = vehicleStopDuration;
+		this.vehicle = vehicle;
 
 		this.requiredPickupTimes = Collections.emptyMap();
 		this.requiredDropoffTimes = Collections.emptyMap();
 	}
 
-	public RouteTracker(TravelTimeEstimator estimator, double stopDuration, int initialOccupancy,
+	public RouteTracker(AlonsoMoraVehicle vehicle, TravelTimeEstimator estimator,
+			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration, int initialOccupancy,
 			double initialDepartureTime, Optional<Link> initialLink, Map<AlonsoMoraRequest, Double> requiredPickupTimes,
 			Map<AlonsoMoraRequest, Double> requiredDropoffTimes) {
 		this.estimator = estimator;
-		this.stopDuration = stopDuration;
+		this.stopDurationProvider = stopDurationProvider;
 		this.initialDepartureTime = initialDepartureTime;
 		this.initialOccupancy = initialOccupancy;
 		this.initialLink = initialLink;
+		this.vehicleStopDuration = vehicleStopDuration;
+		this.vehicle = vehicle;
 
 		this.requiredPickupTimes = requiredPickupTimes;
 		this.requiredDropoffTimes = requiredDropoffTimes;
@@ -138,18 +149,36 @@ public class RouteTracker {
 					arrivalTime = correctArrivalTime(arrivalTime, fromLink != toLink);
 				}
 
-				double stopDepartureTime = arrivalTime + stopDuration;
-				double stopArrivalTime = arrivalTime;
+				AlonsoMoraStop stop = stops.get(i);
 
-				// The following is only relevant for pre-booked requests
-				// If we are too early, we add a waiting time to the vehicle until the earliest
-				// pickup time
-				if (stops.get(i).getType().equals(StopType.Pickup)) {
-					double earliestDepartureTime = stops.get(i).getRequest().getEarliestPickupTime();
-					double vehicleWaitingTime = Math.max(0.0, earliestDepartureTime - stopDepartureTime);
+				final double stopArrivalTime;
+				if (stop.getType().equals(StopType.Pickup)) {
+					// The following is only relevant for pre-booked requests
+					// If we are too early, we add a waiting time to the vehicle until the earliest
+					// pickup time
 
-					stopArrivalTime += vehicleWaitingTime;
-					stopDepartureTime += vehicleWaitingTime;
+					stopArrivalTime = Math.max(arrivalTime, stop.getRequest().getEarliestPickupTime());
+				} else {
+					stopArrivalTime = arrivalTime;
+				}
+
+				final double vehicleDepartureTime = stopArrivalTime + vehicleStopDuration;
+
+				final double stopDepartureTime;
+				if (stop.getType().equals(StopType.Pickup)) {
+					double passengerPickupTime = stopArrivalTime + stopDurationProvider
+							.calcPickupDuration(dvrpVehicle(vehicle), stop.getRequest().getDrtRequest());
+					stop.setTime(passengerPickupTime);
+
+					stopDepartureTime = Math.max(passengerPickupTime, vehicleDepartureTime);
+				} else if (stop.getType().equals(StopType.Dropoff)) {
+					double passengerDropoffTime = stopArrivalTime + stopDurationProvider
+							.calcDropoffDuration(dvrpVehicle(vehicle), stop.getRequest().getDrtRequest());
+					stop.setTime(passengerDropoffTime);
+
+					stopDepartureTime = Math.max(passengerDropoffTime, vehicleDepartureTime);
+				} else {
+					throw new IllegalStateException();
 				}
 
 				arrivalTimes.add(stopArrivalTime);
@@ -157,18 +186,28 @@ public class RouteTracker {
 			} else {
 				// We don't move.
 
-				double stopArrivalTime = arrivalTimes.get(i - 1);
-				double stopDepartureTime = departureTimes.get(i - 1);
+				final double stopArrivalTime = arrivalTimes.get(i - 1);
+				AlonsoMoraStop stop = stops.get(i);
 
-				// The following is only relevant for pre-booked requests
-				// If we are too early, we add another task with a new arrival time
-				if (stops.get(i).getType().equals(StopType.Pickup)) {
-					double expectedDepartureTime = stops.get(i).getRequest().getEarliestPickupTime();
+				final double vehicleDepartureTime = stopArrivalTime + vehicleStopDuration;
 
-					if (expectedDepartureTime > stopDepartureTime) {
-						stopArrivalTime = expectedDepartureTime;
-						stopDepartureTime = stopArrivalTime + stopDuration;
-					}
+				final double stopDepartureTime;
+				if (stop.getType().equals(StopType.Pickup)) {
+					double passengerDepartureTime = Math.max(stopArrivalTime,
+							stop.getRequest().getEarliestPickupTime());
+					double passengerPickupTime = passengerDepartureTime + stopDurationProvider
+							.calcPickupDuration(dvrpVehicle(vehicle), stop.getRequest().getDrtRequest());
+					stop.setTime(passengerPickupTime);
+
+					stopDepartureTime = Math.max(passengerPickupTime, vehicleDepartureTime);
+				} else if (stop.getType().equals(StopType.Dropoff)) {
+					double passengerDropoffTime = stopArrivalTime + stopDurationProvider
+							.calcDropoffDuration(dvrpVehicle(vehicle), stop.getRequest().getDrtRequest());
+					stop.setTime(passengerDropoffTime);
+
+					stopDepartureTime = Math.max(passengerDropoffTime, vehicleDepartureTime);
+				} else {
+					throw new IllegalStateException();
 				}
 
 				arrivalTimes.add(stopArrivalTime);
@@ -180,20 +219,6 @@ public class RouteTracker {
 			} else {
 				occupancies.add(occupancy + (stops.get(i).getType().equals(StopType.Pickup) ? 1 : -1)
 						* stops.get(i).getRequest().getSize());
-			}
-		}
-
-		for (int i = 0; i < stops.size(); i++) {
-			/*
-			 * In DRT, agents are dropped off right when the vehicle arrives and picked up
-			 * after the stopDuration. The first corresponds to "arrivalTime" here and the
-			 * latter to "departureTime".
-			 */
-
-			if (stops.get(i).getType().equals(StopType.Pickup)) {
-				stops.get(i).setTime(departureTimes.get(i));
-			} else {
-				stops.get(i).setTime(arrivalTimes.get(i));
 			}
 		}
 
@@ -228,6 +253,10 @@ public class RouteTracker {
 		}
 
 		return arrivalTime;
+	}
+	
+	private DvrpVehicle dvrpVehicle(AlonsoMoraVehicle vehicle) {
+		return vehicle == null ? null : vehicle.getVehicle();
 	}
 
 	public double getDepartureTime(int index) {

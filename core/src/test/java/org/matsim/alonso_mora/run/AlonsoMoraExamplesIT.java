@@ -95,6 +95,8 @@ public class AlonsoMoraExamplesIT {
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
+		amConfig.checkDeterminsticTravelTimes = true;
+		
 		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
 
 		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);

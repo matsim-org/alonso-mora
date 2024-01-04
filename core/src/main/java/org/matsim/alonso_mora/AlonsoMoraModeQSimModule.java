@@ -63,6 +63,7 @@ import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
 import org.matsim.contrib.drt.scheduler.DrtScheduleInquiry;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.drt.stops.StopTimeCalculator;
 import org.matsim.contrib.dvrp.fleet.Fleet;
 import org.matsim.contrib.dvrp.path.VrpPaths;
@@ -321,13 +322,15 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			SequenceGeneratorFactory sequenceGeneratorFactory = getter.getModal(SequenceGeneratorFactory.class);
 			Objective objective = getter.getModal(Objective.class);
 			Constraint constraint = getter.getModal(Constraint.class);
+			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
 
 			CongestionMitigationParameters congestionParameters = amConfig.congestionMitigation;
 
-			return new DefaultAlonsoMoraFunction(travelTimeEstimator, sequenceGeneratorFactory, drtConfig.stopDuration,
-					congestionParameters.allowPickupViolations, congestionParameters.allowPickupsWithDropoffViolations,
-					amConfig.checkDeterminsticTravelTimes, objective, constraint, amConfig.violationFactor,
-					amConfig.violationOffset, amConfig.preferNonViolation);
+			return new DefaultAlonsoMoraFunction(travelTimeEstimator, sequenceGeneratorFactory, stopDurationProvider,
+					drtConfig.stopDuration, congestionParameters.allowPickupViolations,
+					congestionParameters.allowPickupsWithDropoffViolations, amConfig.checkDeterminsticTravelTimes,
+					objective, constraint, amConfig.violationFactor, amConfig.violationOffset,
+					amConfig.preferNonViolation);
 		}));
 
 		bindModal(Objective.class).toProvider(() -> new MinimumDelay());
@@ -391,9 +394,10 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(AlonsoMoraVehicleFactory.class), //
 					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
 					getter.getModal(TravelTimeEstimator.class), //
-					drtConfig.stopDuration, //
+					getter.getModal(PassengerStopDurationProvider.class), //
 					new AlgorithmSettings(amConfig), //
-					getter.getModal(DrtOfferAcceptor.class));
+					getter.getModal(DrtOfferAcceptor.class), //
+					drtConfig.stopDuration);
 		}));
 
 		bindModal(AlonsoMoraVehicleFactory.class).toInstance(vehicle -> new DefaultAlonsoMoraVehicle(vehicle));

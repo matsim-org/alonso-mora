@@ -12,6 +12,7 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.stops.StaticPassengerStopDurationProvider;
 import org.mockito.Mockito;
 
 public class RouteTrackerTest {
@@ -30,7 +31,7 @@ public class RouteTrackerTest {
 		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
 		Mockito.when(request.getSize()).thenReturn(1);
 
-		RouteTracker tracker = new RouteTracker(estimator, 5.0, 3, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 3, 7000.0, Optional.empty());
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request));
@@ -65,7 +66,7 @@ public class RouteTrackerTest {
 		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
 		Mockito.when(request.getSize()).thenReturn(1);
 
-		RouteTracker tracker = new RouteTracker(estimator, 5.0, 3, 7000.0, Optional.of(linkVehicle));
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 3, 7000.0, Optional.of(linkVehicle));
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request));
@@ -95,7 +96,7 @@ public class RouteTrackerTest {
 		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
 		Mockito.when(request.getSize()).thenReturn(1);
 
-		RouteTracker tracker = new RouteTracker(estimator, 5.0, 0, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request));
@@ -152,7 +153,7 @@ public class RouteTrackerTest {
 		AlonsoMoraRequest request3 = Mockito.mock(AlonsoMoraRequest.class);
 		Mockito.when(request3.getSize()).thenReturn(3);
 
-		RouteTracker tracker = new RouteTracker(estimator, 5.0, 0, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request1));
@@ -182,7 +183,7 @@ public class RouteTrackerTest {
 				estimator.estimateTravelTime(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.anyDouble()))
 				.thenReturn(100.0);
 
-		RouteTracker tracker = new RouteTracker(estimator, 5.0, 0, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
 
 		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
 		Mockito.when(request.getSize()).thenReturn(1);
@@ -239,7 +240,7 @@ public class RouteTrackerTest {
 		Mockito.when(estimator.estimateTravelTime(Mockito.eq(linkB), Mockito.eq(linkB), Mockito.anyDouble(),
 				Mockito.anyDouble())).thenReturn(0.0);
 
-		RouteTracker tracker = new RouteTracker(estimator, 5.0, 0, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
 
 		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
 		Mockito.when(request.getSize()).thenReturn(1);

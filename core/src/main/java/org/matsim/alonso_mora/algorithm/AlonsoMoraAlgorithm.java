@@ -41,6 +41,7 @@ import org.matsim.contrib.drt.passenger.DrtOfferAcceptor;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DefaultDrtStopTask;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.fleet.Fleet;
 import org.matsim.contrib.dvrp.passenger.PassengerRequestRejectedEvent;
@@ -94,14 +95,16 @@ public class AlonsoMoraAlgorithm {
 	private final int maximumOccupancy;
 
 	private final TravelTimeEstimator travelTimeEstimator;
-	private final double stopDuration;
+	private final PassengerStopDurationProvider stopDurationProvider;
 
 	private final AlgorithmSettings settings;
+	private final double vehicleStopDuration;
 
 	public AlonsoMoraAlgorithm(Fleet fleet, AssignmentSolver assignmentSolver, RelocationSolver rebalancingSolver,
 			AlonsoMoraFunction function, AlonsoMoraScheduler scheduler, EventsManager eventsManager, String mode,
 			AlonsoMoraVehicleFactory vehicleFactory, ForkJoinPool forkJoinPool, TravelTimeEstimator travelTimeEstimator,
-			double stopDuration, AlgorithmSettings settings, DrtOfferAcceptor offerAcceptor) {
+			PassengerStopDurationProvider stopDurationProvider, AlgorithmSettings settings, DrtOfferAcceptor offerAcceptor,
+			double vehicleStopDuration) {
 		this.assignmentSolver = assignmentSolver;
 		this.rebalancingSolver = rebalancingSolver;
 		this.scheduler = scheduler;
@@ -110,9 +113,10 @@ public class AlonsoMoraAlgorithm {
 		this.function = function;
 		this.forkJoinPool = forkJoinPool;
 		this.travelTimeEstimator = travelTimeEstimator;
-		this.stopDuration = stopDuration;
+		this.stopDurationProvider = stopDurationProvider;
 		this.settings = settings;
 		this.offerAcceptor = offerAcceptor;
+		this.vehicleStopDuration = vehicleStopDuration;
 
 		// Create vehicle wrappers
 		vehicles = new ArrayList<>(fleet.getVehicles().size());
@@ -314,7 +318,7 @@ public class AlonsoMoraAlgorithm {
 						v.setRoute(updatedRoute);
 
 						if (updatedRoute.size() > 0) {
-							RouteTracker congestionTracker = new RouteTracker(travelTimeEstimator, stopDuration, 0,
+							RouteTracker congestionTracker = new RouteTracker(v, travelTimeEstimator, stopDurationProvider, vehicleStopDuration, 0,
 									diversion.time, Optional.of(diversion.link));
 							congestionTracker.setDrivingState(v);
 							congestionTracker.update(v.getRoute());
