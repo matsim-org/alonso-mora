@@ -82,8 +82,8 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 		Map<AlonsoMoraRequest, Double> requiredPickupTimes = new HashMap<>();
 		Map<AlonsoMoraRequest, Double> requiredDropoffTimes = new HashMap<>();
 
-		requiredPickupTimes.put(firstRequest, firstRequest.getLatestPickupTime());
-		requiredPickupTimes.put(secondRequest, secondRequest.getLatestPickupTime());
+		requiredPickupTimes.put(firstRequest, firstRequest.getPlannedPickupTime());
+		requiredPickupTimes.put(secondRequest, secondRequest.getPlannedPickupTime());
 		requiredDropoffTimes.put(firstRequest, firstRequest.getLatestDropoffTime());
 		requiredDropoffTimes.put(secondRequest, secondRequest.getLatestDropoffTime());
 
@@ -101,7 +101,7 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 
 				switch (stop.getType()) {
 				case Pickup:
-					double maximumPickupTime = stop.getRequest().getLatestPickupTime();
+					double maximumPickupTime = stop.getRequest().getPlannedPickupTime();
 					double calculatedPickupTime = stop.getTime();
 
 					if (calculatedPickupTime > maximumPickupTime) {

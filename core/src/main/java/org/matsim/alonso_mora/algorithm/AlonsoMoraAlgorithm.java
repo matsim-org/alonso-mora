@@ -37,6 +37,7 @@ import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
+import org.matsim.contrib.drt.passenger.DrtOfferAcceptor;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DefaultDrtStopTask;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
@@ -74,6 +75,7 @@ public class AlonsoMoraAlgorithm {
 	private final AlonsoMoraScheduler scheduler;
 	private final AlonsoMoraFunction function;
 	private final ForkJoinPool forkJoinPool;
+	private final DrtOfferAcceptor offerAcceptor;
 
 	private final EventsManager eventsManager;
 	private final String mode;
@@ -99,7 +101,7 @@ public class AlonsoMoraAlgorithm {
 	public AlonsoMoraAlgorithm(Fleet fleet, AssignmentSolver assignmentSolver, RelocationSolver rebalancingSolver,
 			AlonsoMoraFunction function, AlonsoMoraScheduler scheduler, EventsManager eventsManager, String mode,
 			AlonsoMoraVehicleFactory vehicleFactory, ForkJoinPool forkJoinPool, TravelTimeEstimator travelTimeEstimator,
-			double stopDuration, AlgorithmSettings settings) {
+			double stopDuration, AlgorithmSettings settings, DrtOfferAcceptor offerAcceptor) {
 		this.assignmentSolver = assignmentSolver;
 		this.rebalancingSolver = rebalancingSolver;
 		this.scheduler = scheduler;
@@ -110,6 +112,7 @@ public class AlonsoMoraAlgorithm {
 		this.travelTimeEstimator = travelTimeEstimator;
 		this.stopDuration = stopDuration;
 		this.settings = settings;
+		this.offerAcceptor = offerAcceptor;
 
 		// Create vehicle wrappers
 		vehicles = new ArrayList<>(fleet.getVehicles().size());
@@ -430,9 +433,7 @@ public class AlonsoMoraAlgorithm {
 			for (AlonsoMoraRequest request : trip.getRequests()) {
 				Verify.verify(newAssignedRequests.add(request), "Request is assigned twice!");
 
-				// Set the vehicle
-				request.setVehicle(trip.getVehicle());
-
+				// obtain times
 				double expectedPickupTime = Double.NaN;
 				double expectedDropoffTime = Double.NaN;
 
@@ -444,26 +445,7 @@ public class AlonsoMoraAlgorithm {
 
 						if (stop.getType().equals(StopType.Pickup)) {
 							// We're looking at the pickup stop
-
 							expectedPickupTime = stop.getTime();
-
-							if (settings.usePlannedPickupTime) {
-								// We have a waiting time slack, i.e. we move the pickup constraint to the
-								// promised value from the assignment plus a small slack, which, by default, is
-								// zero. So in the usual case, we require that the request be picked up at the
-								// time that we promise at the first assignment.
-
-								// ... but adding the slack cannot exceed the initial pickup requirement
-								double plannedPickupTime = expectedPickupTime + settings.plannedPickupTimeSlack;
-								plannedPickupTime = Math.min(plannedPickupTime, request.getLatestPickupTime());
-
-								request.setPlannedPickupTime(plannedPickupTime);
-							}
-
-							if (request.isAssigned() && !request.getVehicle().equals(trip.getVehicle())) {
-								// Just for statistics: We track whether a request is assigned to a new vehicle
-								information.numberOfReassignments++;
-							}
 						} else if (stop.getType().equals(StopType.Dropoff)) {
 							// We're looking at the dropoff stop
 							expectedDropoffTime = stop.getTime();
@@ -471,11 +453,39 @@ public class AlonsoMoraAlgorithm {
 					}
 				}
 
-				/* For each DRT request, we create a scheduling event */
-				AcceptedDrtRequest drtRequest = request.getAcceptedDrtRequest();
-				eventsManager.processEvent(
-						new PassengerRequestScheduledEvent(now, mode, drtRequest.getId(), drtRequest.getPassengerIds(),
-								trip.getVehicle().getVehicle().getId(), expectedPickupTime, expectedDropoffTime));
+				Verify.verify(Double.isFinite(expectedPickupTime));
+				Verify.verify(Double.isFinite(expectedDropoffTime));
+				
+				// check if request has already been accepted
+				Optional<AcceptedDrtRequest> acceptedRequest = Optional.ofNullable(request.getAcceptedDrtRequest());
+
+				if (acceptedRequest.isEmpty()) {
+					// first need to check if user accepts the offer
+					
+					acceptedRequest = offerAcceptor.acceptDrtOffer(request.getDrtRequest(),
+							expectedPickupTime, expectedDropoffTime);
+					
+					if (acceptedRequest.isPresent()) {
+						request.accept(acceptedRequest.get());
+					}
+				}
+
+				// now proceed with the request, otherwise it is rejected
+				if (acceptedRequest.isPresent()) {
+					// Set the vehicle
+					request.setVehicle(trip.getVehicle());
+
+					// publish scheduling event
+					eventsManager.processEvent(new PassengerRequestScheduledEvent(now, mode,
+							request.getDrtRequest().getId(), request.getDrtRequest().getPassengerIds(),
+							trip.getVehicle().getVehicle().getId(), expectedPickupTime, expectedDropoffTime));
+
+					// statistics
+					if (request.isAssigned() && !request.getVehicle().equals(trip.getVehicle())) {
+						// Just for statistics: We track whether a request is assigned to a new vehicle
+						information.numberOfReassignments++;
+					}
+				}
 			}
 		}
 
@@ -733,8 +743,6 @@ public class AlonsoMoraAlgorithm {
 		final boolean useBindingRelocations;
 		final boolean useStepwiseRelocation;
 		final boolean preserveVehicleAssignments;
-		final boolean usePlannedPickupTime;
-		final double plannedPickupTimeSlack;
 		final double relocationInterval;
 		final boolean allowBareReassignment;
 		final double loggingInterval;
@@ -746,8 +754,6 @@ public class AlonsoMoraAlgorithm {
 			this.useBindingRelocations = config.useBindingRelocations;
 			this.useStepwiseRelocation = config.useStepwiseRelocation;
 			this.preserveVehicleAssignments = config.congestionMitigation.preserveVehicleAssignments;
-			this.usePlannedPickupTime = config.usePlannedPickupTime;
-			this.plannedPickupTimeSlack = config.plannedPickupTimeSlack;
 			this.relocationInterval = config.relocationInterval;
 			this.allowBareReassignment = config.congestionMitigation.allowBareReassignment;
 			this.loggingInterval = config.loggingInterval;

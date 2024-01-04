@@ -6,6 +6,7 @@ import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
 import org.matsim.contrib.dvrp.schedule.Task.TaskStatus;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 
 /**
@@ -137,10 +138,6 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 	}
 
 	public AcceptedDrtRequest getAcceptedDrtRequest() {
-		if (acceptedDrtRequest == null) {
-			acceptedDrtRequest = AcceptedDrtRequest.createFromOriginalRequest(drtRequest);
-		}
-
 		return acceptedDrtRequest;
 	}
 
@@ -208,17 +205,6 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 		}
 	}
 
-	/**
-	 * Sets the planned pickup time. This only happens once on the first assignment,
-	 * afterwards the pickup time has been promised and can not be changed again.
-	 */
-	@Override
-	public void setPlannedPickupTime(double plannedPickupTime) {
-		if (Double.isNaN(this.plannedPickupTime)) {
-			this.plannedPickupTime = plannedPickupTime;
-		}
-	}
-
 	@Override
 	public double getDirectRideDistance() {
 		return directRideDistance;
@@ -232,5 +218,17 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 	@Override
 	public String toString() {
 		return drtRequest.toString();
+	}
+
+	@Override
+	public void accept(AcceptedDrtRequest acceptedRequest) {
+		Preconditions.checkArgument(this.acceptedDrtRequest == null);
+		this.acceptedDrtRequest = acceptedRequest;
+		this.plannedPickupTime = acceptedRequest.getLatestStartTime();
+	}
+
+	@Override
+	public void setPlannedPickupTime(double plannedPickupTime) {
+		throw new IllegalStateException();
 	}
 }

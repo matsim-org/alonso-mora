@@ -60,15 +60,6 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroupWithConfigurable
 	public double maximumQueueTime = 0.0;
 
 	@Parameter
-	@Comment("By default, the algorithm updates the latest pickup time for a request to the planned pickup time that has been calculated at the first assignment. Subsequent dispatching steps must adhere to that value. Using this flag, this functionality may be turned off.")
-	public boolean usePlannedPickupTime = true;
-
-	@Parameter
-	@Comment("See usePlannedPickupTime. When updating the required pickup time, the operator may add a little slack to provide a more pessimistic estimate. The value specified here is added to the planned pickup time on first assignment if usePlannedPickupTime is enabled.")
-	@PositiveOrZero
-	public double plannedPickupTimeSlack = 0;
-
-	@Parameter
 	@Comment("Under ideal and correctly configured freeflow conditions, the algorithm will predict exactly what the vehicles will do in simulation. If this flag is enabled, the algorithm will perform self-checks to verify that this is the case. Use to verify your freeflow condiditons.")
 	public boolean checkDeterminsticTravelTimes = false;
 
@@ -443,11 +434,6 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroupWithConfigurable
 				"Relocation interval must be multiple of the assignment interval");
 		Verify.verify(loggingInterval % assignmentInterval == 0,
 				"Logging interval must be multiple of the assignment interval");
-
-		if (plannedPickupTimeSlack > 0.0) {
-			Verify.verify(!usePlannedPickupTime,
-					"Non-zero value for plannedPickupTimeSlack has no effect if usePlannedPickupTime is false");
-		}
 
 		Verify.verifyNotNull(assignmentSolver);
 		Verify.verifyNotNull(travelTimeEstimator);

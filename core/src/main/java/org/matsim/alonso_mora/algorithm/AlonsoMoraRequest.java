@@ -33,7 +33,7 @@ public interface AlonsoMoraRequest extends Comparable<AlonsoMoraRequest> {
 	double getLatestAssignmentTime();
 
 	DrtRequest getDrtRequest();
-	
+
 	AcceptedDrtRequest getAcceptedDrtRequest();
 
 	public int getSize();
@@ -57,4 +57,6 @@ public interface AlonsoMoraRequest extends Comparable<AlonsoMoraRequest> {
 	public double getDirectRideDistance();
 
 	public double getEarliestPickupTime();
+
+	public void accept(AcceptedDrtRequest acceptedRequest);
 }

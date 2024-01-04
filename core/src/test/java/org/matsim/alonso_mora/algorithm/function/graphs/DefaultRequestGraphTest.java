@@ -226,6 +226,12 @@ public class DefaultRequestGraphTest {
 			// TODO Auto-generated method stub
 			return 0;
 		}
+
+		@Override
+		public void accept(AcceptedDrtRequest acceptedRequest) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	private static class MockFunction implements AlonsoMoraFunction {

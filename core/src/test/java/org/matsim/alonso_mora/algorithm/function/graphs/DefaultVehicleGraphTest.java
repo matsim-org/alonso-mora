@@ -463,6 +463,12 @@ public class DefaultVehicleGraphTest {
 			// TODO Auto-generated method stub
 			return 0;
 		}
+
+		@Override
+		public void accept(AcceptedDrtRequest acceptedRequest) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	private AlonsoMoraVehicle mockVehicle() {

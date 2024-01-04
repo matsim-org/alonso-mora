@@ -132,9 +132,9 @@ public class GlpkExamplesIT {
 		var expectedStats = Stats.newBuilder() //
 				.rejectionRate(0.04) //
 				.rejections(14) //
-				.waitAverage(269.76) //
-				.inVehicleTravelTimeMean(376.47) //
-				.totalTravelTimeMean(646.23) //
+				.waitAverage(268.97) //
+				.inVehicleTravelTimeMean(370.26) //
+				.totalTravelTimeMean(639.24) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
