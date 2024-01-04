@@ -28,7 +28,7 @@ public class MultiModeAlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 
 		for (ConfigGroup modeConfig : getParameterSets(AlonsoMoraConfigGroup.GROUP_NAME)) {
 			AlonsoMoraConfigGroup amConfig = (AlonsoMoraConfigGroup) modeConfig;
-			modes.put(amConfig.getMode(), amConfig);
+			modes.put(amConfig.mode, amConfig);
 		}
 
 		return modes;

@@ -201,7 +201,7 @@ public class RunNewYork {
 
 		MultiModeDrtConfigGroup drtConfig = new MultiModeDrtConfigGroup();
 		config.addModule(drtConfig);
-		
+
 		DrtConfigGroup modeConfig = new DrtConfigGroup();
 		modeConfig.mode = TransportMode.drt;
 		modeConfig.maxTravelTimeAlpha = detourFactor;
@@ -245,21 +245,19 @@ public class RunNewYork {
 			AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
 			multiModeConfig.addParameterSet(amConfig);
 
-			amConfig.setMaximumQueueTime(0.0);
+			amConfig.maximumQueueTime = 0.0;
 
-			amConfig.setAssignmentInterval(30);
-			amConfig.setRelocationInterval(30);
+			amConfig.assignmentInterval = 30;
+			amConfig.relocationInterval = 30;
 
-			amConfig.getCongestionMitigationParameters().setAllowBareReassignment(false);
-			amConfig.getCongestionMitigationParameters().setAllowPickupViolations(true);
-			amConfig.getCongestionMitigationParameters().setAllowPickupsWithDropoffViolations(true);
-			amConfig.getCongestionMitigationParameters().setPreserveVehicleAssignments(true);
+			amConfig.congestionMitigation.allowBareReassignment = false;
+			amConfig.congestionMitigation.allowPickupViolations = true;
+			amConfig.congestionMitigation.allowPickupsWithDropoffViolations = true;
+			amConfig.congestionMitigation.preserveVehicleAssignments = true;
 
-			amConfig.setRerouteDuringScheduling(false);
-
-			amConfig.setCheckDeterminsticTravelTimes(true);
-
-			amConfig.setSequenceGeneratorType(SequenceGeneratorType.Combined);
+			amConfig.rerouteDuringScheduling = false;
+			amConfig.checkDeterminsticTravelTimes = true;
+			amConfig.sequenceGeneratorType = SequenceGeneratorType.Combined;
 
 			GlpkMpsAssignmentParameters assignmentParameters = new GlpkMpsAssignmentParameters();
 			amConfig.addParameterSet(assignmentParameters);
@@ -270,7 +268,7 @@ public class RunNewYork {
 			MatrixEstimatorParameters estimator = new MatrixEstimatorParameters();
 			amConfig.addParameterSet(estimator);
 
-			AlonsoMoraConfigurator.configure(controller, amConfig.getMode());
+			AlonsoMoraConfigurator.configure(controller, amConfig.mode);
 		}
 
 		controller.run();

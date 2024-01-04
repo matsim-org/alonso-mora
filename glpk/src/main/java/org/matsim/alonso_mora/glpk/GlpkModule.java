@@ -36,14 +36,13 @@ public class GlpkModule extends AbstractDvrpModeQSimModule {
 				throw new IllegalStateException("GLPK JNI solver is not available on this system!");
 			}
 
-			GlpkJniAssignmentParameters solverParameters = (GlpkJniAssignmentParameters) amConfig
-					.getAssignmentSolverParameters();
+			GlpkJniAssignmentParameters solverParameters = (GlpkJniAssignmentParameters) amConfig.assignmentSolver;
 
-			return new GlpkJniAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap());
+			return new GlpkJniAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
+					solverParameters.timeLimit, solverParameters.optimalityGap);
 		})).in(Singleton.class);
 
-		if (amConfig.getAssignmentSolverParameters().getSolverType().equals(GlpkJniAssignmentSolver.TYPE)) {
+		if (amConfig.assignmentSolver.getSolverType().equals(GlpkJniAssignmentSolver.TYPE)) {
 			bindModal(AssignmentSolver.class).to(modalKey(GlpkJniAssignmentSolver.class));
 		}
 
@@ -55,7 +54,7 @@ public class GlpkModule extends AbstractDvrpModeQSimModule {
 			return new GlpkJniRelocationSolver();
 		})).in(Singleton.class);
 
-		if (amConfig.getRelocationSolverParameters().getSolverType().equals(GlpkJniRelocationSolver.TYPE)) {
+		if (amConfig.assignmentSolver.getSolverType().equals(GlpkJniRelocationSolver.TYPE)) {
 			bindModal(RelocationSolver.class).to(modalKey(GlpkJniRelocationSolver.class));
 		}
 	}

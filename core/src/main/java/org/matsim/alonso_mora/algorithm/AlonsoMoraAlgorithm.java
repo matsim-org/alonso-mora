@@ -743,18 +743,17 @@ public class AlonsoMoraAlgorithm {
 		final int tripGraphlimitPerSequenceLength;
 
 		public AlgorithmSettings(AlonsoMoraConfigGroup config) {
-			this.useBindingRelocations = config.getUseBindingRelocations();
-			this.useStepwiseRelocation = config.getUseStepwiseRelocation();
-			this.preserveVehicleAssignments = config.getCongestionMitigationParameters()
-					.getPreserveVehicleAssignments();
-			this.usePlannedPickupTime = config.getUsePlannedPickupTime();
-			this.plannedPickupTimeSlack = config.getPlannedPickupTimeSlack();
-			this.relocationInterval = config.getRelocationInterval();
-			this.allowBareReassignment = config.getCongestionMitigationParameters().getAllowBareReassignment();
-			this.loggingInterval = config.getLoggingInterval();
-			this.candidateVehiclesPerRequest = config.getCandidateVehiclesPerRequest();
-			this.tripGraphLimitPerVehicle = config.getTripGraphLimitPerVehicle();
-			this.tripGraphlimitPerSequenceLength = config.getTripGraphLimitPerSequenceLength();
+			this.useBindingRelocations = config.useBindingRelocations;
+			this.useStepwiseRelocation = config.useStepwiseRelocation;
+			this.preserveVehicleAssignments = config.congestionMitigation.preserveVehicleAssignments;
+			this.usePlannedPickupTime = config.usePlannedPickupTime;
+			this.plannedPickupTimeSlack = config.plannedPickupTimeSlack;
+			this.relocationInterval = config.relocationInterval;
+			this.allowBareReassignment = config.congestionMitigation.allowBareReassignment;
+			this.loggingInterval = config.loggingInterval;
+			this.candidateVehiclesPerRequest = config.candidateVehiclesPerRequest;
+			this.tripGraphLimitPerVehicle = config.tripGraphLimitPerVehicle;
+			this.tripGraphlimitPerSequenceLength = config.tripGraphLimitPerSequenceLength;
 		}
 	}
 

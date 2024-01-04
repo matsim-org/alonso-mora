@@ -34,7 +34,7 @@ public class AlonsoMoraConfigurator {
 		MultiModeAlonsoMoraConfigGroup multiModeConfig = MultiModeAlonsoMoraConfigGroup.get(config);
 
 		for (AlonsoMoraConfigGroup modeConfig : multiModeConfig.getModes().values()) {
-			if (modeConfig.getMode().equals(mode)) {
+			if (modeConfig.mode.equals(mode)) {
 				return modeConfig;
 			}
 		}

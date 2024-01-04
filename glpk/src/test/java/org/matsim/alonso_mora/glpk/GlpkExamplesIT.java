@@ -17,7 +17,7 @@
  *                                                                         *
  * *********************************************************************** */
 
-package org.matsim.alonso_mora.run;
+package org.matsim.alonso_mora.glpk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -82,13 +82,13 @@ import org.matsim.vis.otfvis.OTFVisConfigGroup;
 /**
  * @author sebhoerl
  */
-public class AlonsoMoraExamplesIT {
+public class GlpkExamplesIT {
 
 	@RegisterExtension
 	private MatsimTestUtils utils = new MatsimTestUtils();
 
 	@Test
-	public void testRunAlonsoMora() {
+	public void testRunAlonsoMoraWithGlpk() {
 		Id.resetCaches();
 		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
 		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), new DvrpConfigGroup(),
@@ -96,6 +96,14 @@ public class AlonsoMoraExamplesIT {
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
 		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
+		
+		GlpkModule.configure(amConfig);
+		
+		amConfig.clearAssignmentSolver();
+		amConfig.addParameterSet(new GlpkJniAssignmentParameters());
+		
+		amConfig.clearRelocationSolver();
+		amConfig.addParameterSet(new GlpkJniRelocationParameters());
 
 		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controller().setOutputDirectory(utils.getOutputDirectory());
@@ -115,150 +123,18 @@ public class AlonsoMoraExamplesIT {
 
 		controller.addOverridingModule(new DvrpModule());
 		controller.addOverridingModule(new MultiModeDrtModule());
+		controller.addOverridingQSimModule(new GlpkModule(drtConfig, amConfig));
 		controller.configureQSimComponents(DvrpQSimComponents.activateAllModes(MultiModeDrtConfigGroup.get(config)));
 
 		AlonsoMoraConfigurator.configure(controller, amConfig.mode);
 		controller.run();
 
 		var expectedStats = Stats.newBuilder() //
-				.rejectionRate(0.2) //
-				.rejections(78) //
-				.waitAverage(215.41) //
-				.inVehicleTravelTimeMean(346.55) //
-				.totalTravelTimeMean(561.97) //
-				.build();
-
-		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
-	}
-
-	@Test
-	public void testRunAlonsoMoraWithShifts() {
-		Id.resetCaches();
-		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
-		Config config = ConfigUtils.loadConfig(configUrl,
-				new MultiModeDrtConfigGroup(DrtWithOperationsConfigGroup::new), new DvrpConfigGroup(),
-				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
-
-		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
-		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
-
-		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-		config.controller().setOutputDirectory(utils.getOutputDirectory());
-
-		// Remove DRT rebalancer as we want to use AM rebalancer
-		DrtWithOperationsConfigGroup drtConfig = (DrtWithOperationsConfigGroup) MultiModeDrtConfigGroup.get(config)
-				.getModalElements().iterator().next();
-		drtConfig.removeParameterSet(drtConfig.getRebalancingParams().get());
-
-		// shift parameters
-		DrtOperationsParams operationsParams = new DrtOperationsParams();
-		drtConfig.addParameterSet(operationsParams);
-
-		OperationFacilitiesParams operationFacilitiesParams = new OperationFacilitiesParams();
-		operationsParams.addParameterSet(operationFacilitiesParams);
-
-		ShiftsParams shiftParams = new ShiftsParams();
-		operationsParams.addParameterSet(shiftParams);
-
-		// Load scenario
-		Scenario scenario = ScenarioUtils.createScenario(config);
-		scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class,
-				new DrtRouteFactory());
-		ScenarioUtils.loadScenario(scenario);
-
-		// Set up shifts and shift facilities
-
-		DrtShiftsSpecification shifts = new DrtShiftsSpecificationImpl();
-		{
-			double baseStartTime = 6.0 * 3600.0;
-			double shiftDuration = 8.0 * 3600.0;
-			double breakDuration = 1800.0;
-			double breakBuffer = 3.0 * 3600.0;
-			int parallelShifts = 1;
-
-			int shiftIndex = 0;
-
-			Random random = new Random(0);
-			double variability = 3600.0;
-
-			while (baseStartTime + shiftDuration < 7.0 * 24.0 * 3600.0) {
-				double shiftStartTime = baseStartTime + Math.round(variability * random.nextDouble());
-				double shiftEndTime = shiftStartTime + shiftDuration;
-
-				for (int k = 0; k < parallelShifts; k++) {
-					double breakMiddleTime = shiftStartTime + 0.5 * shiftDuration;
-					double earliestBreakStartTime = breakMiddleTime - 0.5 * breakBuffer;
-					double earliestBreakEndTime = breakMiddleTime + 0.5 * breakBuffer;
-
-					earliestBreakStartTime = Math.floor(earliestBreakStartTime);
-					earliestBreakEndTime = Math.floor(earliestBreakEndTime);
-
-					shifts.addShiftSpecification(DrtShiftSpecificationImpl.newBuilder() //
-							.id(Id.create(shiftIndex, DrtShift.class)) //
-							.start(shiftStartTime) //
-							.end(shiftEndTime) //
-							.shiftBreak(DrtShiftBreakSpecificationImpl.newBuilder() //
-									.earliestStart(earliestBreakStartTime) //
-									.latestEnd(earliestBreakEndTime) //
-									.duration(breakDuration) //
-									.build()) //
-							.build());
-
-					shiftIndex++;
-				}
-
-				baseStartTime += shiftDuration;
-			}
-		}
-
-		List<Id<Link>> hubLinkIds = Arrays.asList("385", "499", "277", "52", "449").stream().map(Id::createLinkId)
-				.collect(Collectors.toList());
-
-		OperationFacilitiesSpecification operationFacilities = new OperationFacilitiesSpecificationImpl();
-		int hubIndex = 0;
-		for (Id<Link> hubLinkId : hubLinkIds) {
-			operationFacilities.addOperationFacilitySpecification(OperationFacilitySpecificationImpl.newBuilder()//
-					.id(Id.create("hub" + (++hubIndex), OperationFacility.class)) //
-					.linkId(hubLinkId) //
-					.coord(scenario.getNetwork().getLinks().get(hubLinkId).getCoord()) //
-					.capacity(50) //
-					.type(OperationFacilityType.hub) //
-					.build());
-		}
-
-		// Set up controller
-		Controler controller = new Controler(scenario);
-
-		controller.addOverridingModule(new DvrpModule());
-		controller.addOverridingModule(new MultiModeDrtModule());
-		controller.configureQSimComponents(DvrpQSimComponents.activateAllModes(MultiModeDrtConfigGroup.get(config)));
-
-		for (DrtConfigGroup drtCfg : MultiModeDrtConfigGroup.get(config).getModalElements()) {
-			controller.addOverridingModule(new ShiftDrtModeModule(drtCfg));
-			controller.addOverridingQSimModule(
-					new DrtModeQSimModule(drtCfg, new ShiftDrtModeOptimizerQSimModule(drtCfg)));
-			controller.addOverridingQSimModule(new ShiftDvrpFleetQsimModule(drtCfg.getMode()));
-			controller.addOverridingQSimModule(new OperationFacilitiesQSimModule(drtConfig));
-		}
-
-		controller.addOverridingModule(new AbstractDvrpModeModule("drt") {
-			@Override
-			public void install() {
-				bindModal(DrtShiftsSpecification.class).toInstance(shifts);
-				bindModal(OperationFacilitiesSpecification.class).toInstance(operationFacilities);
-			}
-		});
-
-		AlonsoMoraConfigurator.configure(controller, amConfig.mode);
-		controller.addOverridingQSimModule(new ShiftAlonsoMoraModule(drtConfig, shiftParams, amConfig));
-		controller.run();
-
-		var expectedStats = Stats.newBuilder() //
-				.rejectionRate(0.86) //
-				.rejections(332) //
-				.waitAverage(283.79) //
-				.inVehicleTravelTimeMean(370.75) //
-				.totalTravelTimeMean(654.54) //
+				.rejectionRate(0.04) //
+				.rejections(14) //
+				.waitAverage(269.76) //
+				.inVehicleTravelTimeMean(376.47) //
+				.totalTravelTimeMean(646.23) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
