@@ -341,7 +341,7 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 			if (isValid) {
 				if (generator.isComplete()) {
 					// We found a new solution that is better than the old one (see objective
-					// contraint above)
+					// constraint above)
 					bestSolution = copySolution(stops);
 					bestObjective = partialObjective;
 					bestHasViolations = hasViolations;

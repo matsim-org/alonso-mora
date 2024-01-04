@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
+import org.matsim.alonso_mora.AlonsoMoraConfigGroup.GlpkMpsAssignmentParameters;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup.RoutingEstimatorParameters;
 import org.matsim.alonso_mora.AlonsoMoraConfigurator;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
@@ -60,6 +61,8 @@ import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftBreakSpe
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftSpecificationImpl;
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecification;
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecificationImpl;
+import org.matsim.contrib.drt.prebooking.PrebookingParams;
+import org.matsim.contrib.drt.prebooking.logic.ProbabilityBasedPrebookingLogic;
 import org.matsim.contrib.drt.routing.DrtRoute;
 import org.matsim.contrib.drt.routing.DrtRouteFactory;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
@@ -96,8 +99,6 @@ public class AlonsoMoraExamplesIT {
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
-		amConfig.checkDeterminsticTravelTimes = true;
-		
 		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
 
 		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
@@ -424,5 +425,75 @@ public class AlonsoMoraExamplesIT {
 				return new Stats(this);
 			}
 		}
+	}
+	
+	@Test
+	public void testRunAlonsoMoraWithPrebooking() {
+		Id.resetCaches();
+		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
+		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), new DvrpConfigGroup(),
+				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
+
+		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
+		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
+
+		// Start: Configure deterministic travel times
+		config.qsim().setFlowCapFactor(1e9);
+		config.qsim().setStorageCapFactor(1e9);
+		
+		amConfig.checkDeterminsticTravelTimes = true;
+		amConfig.preferNonViolation = true;
+		amConfig.congestionMitigation.allowPickupViolations = false;
+		amConfig.congestionMitigation.allowPickupsWithDropoffViolations = false;
+		
+		RoutingEstimatorParameters estimatorParameters = new RoutingEstimatorParameters();
+		estimatorParameters.cacheLifetime = 0.0;
+		
+		amConfig.clearTravelTimeEstimator();
+		amConfig.addParameterSet(estimatorParameters);
+		
+		amConfig.clearAssignmentSolver();
+		amConfig.addParameterSet(new GlpkMpsAssignmentParameters());
+		
+		// End
+		
+		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controller().setOutputDirectory(utils.getOutputDirectory());
+
+		// Remove DRT rebalancer as we want to use AM rebalancer
+		DrtConfigGroup drtConfig = MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();
+		drtConfig.removeParameterSet(drtConfig.getRebalancingParams().get());
+		
+		// prebooking
+		PrebookingParams prebookingParams = new PrebookingParams();
+		drtConfig.addParameterSet(prebookingParams);
+
+		// Load scenario
+		Scenario scenario = ScenarioUtils.createScenario(config);
+		scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class,
+				new DrtRouteFactory());
+		ScenarioUtils.loadScenario(scenario);
+
+		// Set up controller
+		Controler controller = new Controler(scenario);
+
+		controller.addOverridingModule(new DvrpModule());
+		controller.addOverridingModule(new MultiModeDrtModule());
+		controller.configureQSimComponents(DvrpQSimComponents.activateAllModes(MultiModeDrtConfigGroup.get(config)));
+
+		ProbabilityBasedPrebookingLogic.install(controller, drtConfig, 0.25, 600.0);
+		
+		AlonsoMoraConfigurator.configure(controller, amConfig.mode);
+		controller.run();
+
+		var expectedStats = Stats.newBuilder() //
+				.rejectionRate(0.03) //
+				.rejections(11) //
+				.waitAverage(204.48) //
+				.inVehicleTravelTimeMean(345.55) //
+				.totalTravelTimeMean(550.03) //
+				.build();
+
+		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
 	}
 }

@@ -127,6 +127,11 @@ public class RouteTracker {
 
 			Link toLink = stops.get(i).getLink();
 
+			/*
+			 * sehoerl, January 2014: Do we need this additional condition here for i == 0?
+			 * Need to modify the else block to make it possible that persons are inserted
+			 * into ongoing stop tasks, like it is done in DRT.
+			 */
 			if (fromLink != toLink || i == 0) {
 				double arrivalTimeThreshold = Double.POSITIVE_INFINITY;
 
@@ -177,6 +182,8 @@ public class RouteTracker {
 					stop.setTime(passengerDropoffTime);
 
 					stopDepartureTime = Math.max(passengerDropoffTime, vehicleDepartureTime);
+				} else if (stop.getType().equals(StopType.Relocation)) {
+					stopDepartureTime = stopArrivalTime; // relocation
 				} else {
 					throw new IllegalStateException();
 				}
@@ -206,6 +213,8 @@ public class RouteTracker {
 					stop.setTime(passengerDropoffTime);
 
 					stopDepartureTime = Math.max(passengerDropoffTime, vehicleDepartureTime);
+				} else if (stop.getType().equals(StopType.Relocation)) {
+					stopDepartureTime = stopArrivalTime; // relocation
 				} else {
 					throw new IllegalStateException();
 				}
@@ -254,7 +263,7 @@ public class RouteTracker {
 
 		return arrivalTime;
 	}
-	
+
 	private DvrpVehicle dvrpVehicle(AlonsoMoraVehicle vehicle) {
 		return vehicle == null ? null : vehicle.getVehicle();
 	}

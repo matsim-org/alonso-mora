@@ -435,8 +435,6 @@ public class AlonsoMoraAlgorithm {
 		for (AlonsoMoraTrip trip : solution.trips) {
 			// Find information for each request along the sequence
 			for (AlonsoMoraRequest request : trip.getRequests()) {
-				Verify.verify(newAssignedRequests.add(request), "Request is assigned twice!");
-
 				// obtain times
 				double expectedPickupTime = Double.NaN;
 				double expectedDropoffTime = Double.NaN;
@@ -476,6 +474,8 @@ public class AlonsoMoraAlgorithm {
 
 				// now proceed with the request, otherwise it is rejected
 				if (acceptedRequest.isPresent()) {
+					Verify.verify(newAssignedRequests.add(request), "Request is assigned twice!");
+					
 					// Set the vehicle
 					request.setVehicle(trip.getVehicle());
 

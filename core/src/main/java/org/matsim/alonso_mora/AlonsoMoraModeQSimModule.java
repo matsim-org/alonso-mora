@@ -58,6 +58,7 @@ import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.optimizer.QSimScopeForkJoinPoolHolder;
 import org.matsim.contrib.drt.optimizer.rebalancing.RebalancingStrategy;
 import org.matsim.contrib.drt.passenger.DrtOfferAcceptor;
+import org.matsim.contrib.drt.prebooking.unscheduler.RequestUnscheduler;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
@@ -349,8 +350,9 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			Network network = getter.getModal(Network.class);
 
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
+			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
 
-			return new DefaultAlonsoMoraScheduler(taskFactory, drtConfig.stopDuration,
+			return new DefaultAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.stopDuration,
 					amConfig.checkDeterminsticTravelTimes, amConfig.rerouteDuringScheduling, travelTime, network,
 					endTimeCalculator, router, operationalVoter);
 		}));
@@ -424,5 +426,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 
 		bindModal(AlonsoMoraOfferAcceptor.class).toInstance(new AlonsoMoraOfferAcceptor());
 		bindModal(DrtOfferAcceptor.class).to(modalKey(AlonsoMoraOfferAcceptor.class));
+
+		bindModal(AlonsoMoraUnscheduler.class).toInstance(new AlonsoMoraUnscheduler());
+		bindModal(RequestUnscheduler.class).to(modalKey(AlonsoMoraUnscheduler.class));
 	}
 }
