@@ -5,8 +5,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.IntStream;
 
@@ -45,15 +43,9 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 
 	private final InformationCollector collector;
 
-	private final Queue<AlonsoMoraRequest> prebookingQueue = new PriorityQueue<>((a, b) -> {
-		return Double.compare(a.getEarliestPickupTime(), b.getEarliestPickupTime());
-	});
-
-	private final double prebookingHorizon;
-
 	public AlonsoMoraOptimizer(AlonsoMoraAlgorithm algorithm, AlonsoMoraRequestFactory requestFactory,
 			ScheduleTimingUpdater scheduleTimingUpdater, Fleet fleet, double assignmentInterval,
-			ForkJoinPool forkJoinPool, LeastCostPathCalculator router, TravelTime travelTime, double prebookingHorizon,
+			ForkJoinPool forkJoinPool, LeastCostPathCalculator router, TravelTime travelTime,
 			InformationCollector collector) {
 		this.algorithm = algorithm;
 		this.requestFactory = requestFactory;
@@ -63,7 +55,6 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 		this.forkJoinPool = forkJoinPool;
 		this.router = router;
 		this.travelTime = travelTime;
-		this.prebookingHorizon = prebookingHorizon;
 		this.collector = collector;
 	}
 
@@ -77,7 +68,7 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 		double now = e.getSimulationTime();
 
 		if (now % assignmentInterval == 0) {
-			List<AlonsoMoraRequest> newRequests = new LinkedList<>();
+			List<AlonsoMoraRequest> processedRequests = new LinkedList<>();
 
 			List<DrtRequest> submittedRequests = new ArrayList<>(this.submittedRequests);
 			this.submittedRequests.clear();
@@ -93,7 +84,6 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 				});
 			}).join();
 
-			// Grouped requests
 			for (int i = 0; i < submittedRequests.size(); i++) {
 				DrtRequest drtRequest = submittedRequests.get(i);
 
@@ -104,25 +94,15 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 				AlonsoMoraRequest request = requestFactory.createRequest(drtRequest, directArrivalTime,
 						earliestDepartureTime, directRideDistance);
 
-				if (now >= request.getEarliestPickupTime() - prebookingHorizon) {
-					newRequests.add(request);
-				} else {
-					prebookingQueue.add(request);
-				}
+				processedRequests.add(request);
 			}
-
-			while (prebookingQueue.size() > 0
-					&& now >= prebookingQueue.peek().getEarliestPickupTime() - prebookingHorizon) {
-				newRequests.add(prebookingQueue.poll());
-			}
-
-			submittedRequests.clear();
 
 			for (DvrpVehicle v : fleet.getVehicles().values()) {
 				scheduleTimingUpdater.updateTimings(v);
 			}
 
-			Optional<AlonsoMoraAlgorithm.Information> information = algorithm.run(newRequests, e.getSimulationTime());
+			Optional<AlonsoMoraAlgorithm.Information> information = algorithm.run(processedRequests,
+					e.getSimulationTime());
 
 			if (information.isPresent()) {
 				collector.addInformation(e.getSimulationTime(), information.get());
