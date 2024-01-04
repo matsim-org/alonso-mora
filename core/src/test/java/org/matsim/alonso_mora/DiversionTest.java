@@ -1,12 +1,13 @@
 package org.matsim.alonso_mora;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -128,8 +129,8 @@ public class DiversionTest {
 		{
 			/* Create some necessary configuration for the test */
 
-			config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-			config.controler().setLastIteration(0);
+			config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+			config.controller().setLastIteration(0);
 
 			config.qsim().setStartTime(0.0);
 			config.qsim().setSimStarttimeInterpretation(StarttimeInterpretation.onlyUseStarttime);
@@ -223,16 +224,16 @@ public class DiversionTest {
 
 		// Took the fixed value from the simulation, to make sure this stays consistent
 		// over refactorings
-		Assert.assertEquals(testTracker.eventBasedArrivalTime, 657.0, 1e-3);
+		assertEquals(testTracker.eventBasedArrivalTime, 657.0, 1e-3);
 
 		// Initially calculated arrival time should predict correctly the final arrival
 		// time
-		Assert.assertEquals(testTracker.initialArrivalTime, 657.0, 1e-3);
+		assertEquals(testTracker.initialArrivalTime, 657.0, 1e-3);
 
 		// Along the route, when diverting to the same destination, arrival time should
 		// stay constant
 		testTracker.diversionArrivalTimes.forEach(t -> {
-			Assert.assertEquals(t, 657.0, 1e-3);
+			assertEquals(t, 657.0, 1e-3);
 		});
 	}
 
@@ -454,8 +455,8 @@ public class DiversionTest {
 		{
 			/* Create some necessary configuration for the test */
 
-			config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-			config.controler().setLastIteration(0);
+			config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+			config.controller().setLastIteration(0);
 
 			config.qsim().setStartTime(0.0);
 			config.qsim().setSimStarttimeInterpretation(StarttimeInterpretation.onlyUseStarttime);
@@ -552,16 +553,16 @@ public class DiversionTest {
 
 		// Took the fixed value from the simulation, to make sure this stays consistent
 		// over refactorings - same as previous unit test
-		Assert.assertEquals(testTracker.eventBasedArrivalTime, 657.0, 1e-3);
+		assertEquals(testTracker.eventBasedArrivalTime, 657.0, 1e-3);
 
 		// Initially calculated arrival time should predict correctly the final arrival
 		// time - as in the first unit test as we route to L8
-		Assert.assertEquals(testTracker.initialArrivalTime, 657.0, 1e-3);
+		assertEquals(testTracker.initialArrivalTime, 657.0, 1e-3);
 
 		// Along the route, when diverting to the same destination, arrival time should
 		// stay constant
 		testTracker.diversionArrivalTimes.forEach(t -> {
-			Assert.assertEquals(t, 739.0, 1e-3);
+			assertEquals(t, 739.0, 1e-3);
 		});
 
 		// Without fix in OnlineDriveTaskTrackerImpl, the last test will lead to a

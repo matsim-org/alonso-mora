@@ -20,6 +20,7 @@ import org.matsim.contrib.drt.schedule.DrtStopTask;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
 import org.matsim.contrib.drt.schedule.DrtTaskType;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.path.VrpPathWithTravelData;
 import org.matsim.contrib.dvrp.path.VrpPaths;
@@ -52,7 +53,8 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 	private final LeastCostPathCalculator router;
 	private final TravelTime travelTime;
 
-	private final double stopDuration;
+	private final PassengerStopDurationProvider stopDurationProvider;
+	private final double vehicleStopDuration;
 	private final boolean checkDeterminsticTravelTimes;
 	private final boolean reroutingDuringScheduling;
 
@@ -60,18 +62,19 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 	private final StayTaskEndTimeCalculator endTimeCalculator;
 
-	public DefaultAlonsoMoraScheduler(DrtTaskFactory taskFactory, double stopDuration,
-			boolean checkDeterminsticTravelTimes, boolean reroutingDuringScheduling, TravelTime travelTime,
-			Network network, StayTaskEndTimeCalculator endTimeCalculator, LeastCostPathCalculator router,
-			OperationalVoter operationalVoter) {
+	public DefaultAlonsoMoraScheduler(DrtTaskFactory taskFactory, PassengerStopDurationProvider stopDurationProvider,
+			double vehicleStopDuration, boolean checkDeterminsticTravelTimes, boolean reroutingDuringScheduling,
+			TravelTime travelTime, Network network, StayTaskEndTimeCalculator endTimeCalculator,
+			LeastCostPathCalculator router, OperationalVoter operationalVoter) {
 		this.taskFactory = taskFactory;
-		this.stopDuration = stopDuration;
+		this.vehicleStopDuration = vehicleStopDuration;
 		this.checkDeterminsticTravelTimes = checkDeterminsticTravelTimes;
 		this.reroutingDuringScheduling = reroutingDuringScheduling;
 		this.endTimeCalculator = endTimeCalculator;
 		this.travelTime = travelTime;
 		this.router = router;
 		this.operationalVoter = operationalVoter;
+		this.stopDurationProvider = stopDurationProvider;
 	}
 
 	/**
@@ -115,23 +118,23 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 			for (AlonsoMoraStop stop : stops) {
 				switch (stop.getType()) {
-				case Dropoff:
+				case Dropoff: {
 					// This means that the stop list contains a stop with a request that is
 					// currently being dropped off in the current task. As we don't want to add
 					// another task with this request to the vehicle's schedule, this should not be
 					// here. Most likely, this is an error in the TravelFunction.
 
-					for (AcceptedDrtRequest drtRequest : stop.getRequest().getAcceptedDrtRequests()) {
-						Verify.verify(!stopTask.getDropoffRequests().containsKey(drtRequest.getId()));
-					}
+					AcceptedDrtRequest drtRequest = stop.getRequest().getAcceptedDrtRequest();
+					Verify.verify(!stopTask.getDropoffRequests().containsKey(drtRequest.getId()));
 
 					break;
-				case Pickup:
-					for (AcceptedDrtRequest drtRequest : stop.getRequest().getAcceptedDrtRequests()) {
-						Verify.verify(!stopTask.getPickupRequests().containsKey(drtRequest.getId()));
-					}
+				}
+				case Pickup: {
+					AcceptedDrtRequest drtRequest = stop.getRequest().getAcceptedDrtRequest();
+					Verify.verify(!stopTask.getPickupRequests().containsKey(drtRequest.getId()));
 
 					break;
+				}
 				case Relocation:
 					break;
 				default:
@@ -168,10 +171,9 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 			boolean isStayTask = task instanceof DrtStayTask;
 			boolean isStopTask = task instanceof DrtStopTask;
 			boolean isDriveTask = task instanceof DrtDriveTask;
-			boolean isWaitForStopTask = task instanceof WaitForStopTask;
 			boolean isOperationalTask = operationalVoter.isOperationalTask(task);
 
-			Verify.verify(isStayTask || isStopTask || isDriveTask || isWaitForStopTask || isOperationalTask,
+			Verify.verify(isStayTask || isStopTask || isDriveTask || isOperationalTask,
 					"Don't know what to do with this task");
 		}
 
@@ -200,7 +202,7 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 		} else if (currentTask instanceof StayTask) {
 			currentLink = ((StayTask) currentTask).getLink();
 
-			if (currentTask instanceof DrtStayTask || currentTask instanceof WaitForStopTask) {
+			if (currentTask instanceof DrtStayTask) {
 				// If we are currently staying somewhere, end the stay task now
 				currentTask.setEndTime(now);
 			}
@@ -259,12 +261,30 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 				// For pre-booked requests, we may need to wait for the customer
 				if (stop.getType().equals(StopType.Pickup)) {
-					double expectedStartTime = stop.getRequest().getEarliestPickupTime() - stopDuration;
+					double earliestStartTime = stop.getRequest().getEarliestPickupTime();
 
-					if (expectedStartTime > currentTask.getEndTime()) {
-						currentTask = new WaitForStopTask(currentTask.getEndTime(), expectedStartTime, currentLink);
-						schedule.addTask(currentTask);
+					if (earliestStartTime > currentTask.getEndTime()) {
+						if (currentTask instanceof DrtStayTask) {
+							currentTask.setEndTime(earliestStartTime);
+						} else {
+							currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
+									earliestStartTime, currentLink);
+							schedule.addTask(currentTask);
+						}
 					}
+				}
+
+				// Obtain the stop duration
+				final double passengerStopDuration;
+
+				if (stop.getType().equals(StopType.Pickup)) {
+					passengerStopDuration = stopDurationProvider.calcPickupDuration(dvrpVehicle,
+							stop.getRequest().getDrtRequest());
+				} else if (stop.getType().equals(StopType.Dropoff)) {
+					passengerStopDuration = stopDurationProvider.calcDropoffDuration(dvrpVehicle,
+							stop.getRequest().getDrtRequest());
+				} else {
+					throw new IllegalStateException();
 				}
 
 				// Now, retrieve or create the stop task
@@ -278,6 +298,8 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 					stopTask = (DrtStopTask) currentTask;
 				} else {
 					// Create a new stop task as we are not at a previously created stop
+					double stopDuration = Math.max(vehicleStopDuration, passengerStopDuration);
+
 					stopTask = taskFactory.createStopTask(dvrpVehicle, currentTask.getEndTime(),
 							currentTask.getEndTime() + stopDuration, stop.getLink());
 
@@ -288,8 +310,13 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 				// Add requests to the stop task
 
 				if (stop.getType().equals(StopType.Pickup)) {
-					stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addPickupRequest);
+					stopTask.addPickupRequest(stop.getRequest().getAcceptedDrtRequest());
 					stop.getRequest().setPickupTask(vehicle, stopTask);
+
+					double passengerDepartureTime = Math.max(stopTask.getBeginTime(),
+							stop.getRequest().getEarliestPickupTime());
+					double passengerPickupTime = passengerDepartureTime + passengerStopDuration;
+					stopTask.setEndTime(Math.max(stopTask.getEndTime(), passengerPickupTime));
 
 					if (checkDeterminsticTravelTimes) {
 						Verify.verify(stop.getTime() == stopTask.getEndTime(),
@@ -298,8 +325,10 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 								"Checking for determinstic travel times and found mismatch between expected stop time and planned stop time.");
 					}
 				} else if (stop.getType().equals(StopType.Dropoff)) {
-					stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addDropoffRequest);
+					stopTask.addDropoffRequest(stop.getRequest().getAcceptedDrtRequest());
 					stop.getRequest().setDropoffTask(vehicle, stopTask);
+					stopTask.setEndTime(
+							Math.max(stopTask.getEndTime(), stopTask.getBeginTime() + passengerStopDuration));
 
 					if (checkDeterminsticTravelTimes) {
 						Verify.verify(stop.getTime() == stopTask.getBeginTime(),
@@ -443,9 +472,9 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 		if (currentTask instanceof DrtStayTask) {
 			currentTask.setEndTime(Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()));
-		}else if(currentTask instanceof WaitForShiftStayTask)  {
-			if(currentTask.getEndTime() == now) {
-				//if the shift just started, re-create the stay task
+		} else if (currentTask instanceof WaitForShiftStayTask) {
+			if (currentTask.getEndTime() == now) {
+				// if the shift just started, re-create the stay task
 				StayTask stayTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
 						Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()), currentLink);
 				schedule.addTask(stayTask);

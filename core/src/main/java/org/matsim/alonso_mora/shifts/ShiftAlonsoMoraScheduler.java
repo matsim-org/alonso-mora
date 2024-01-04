@@ -11,19 +11,19 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
-import org.matsim.alonso_mora.scheduling.WaitForStopTask;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftBreakTask;
 import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftChangeOverTask;
 import org.matsim.contrib.drt.extension.operations.shifts.schedule.WaitForShiftStayTask;
-import org.matsim.contrib.drt.passenger.DrtRequest;
+import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.schedule.DrtDriveTask;
 import org.matsim.contrib.drt.schedule.DrtStayTask;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
 import org.matsim.contrib.drt.schedule.DrtTaskType;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.path.VrpPathWithTravelData;
 import org.matsim.contrib.dvrp.path.VrpPaths;
@@ -52,433 +52,462 @@ import com.google.common.base.Verify;
  * @author sebhoerl
  */
 public class ShiftAlonsoMoraScheduler implements AlonsoMoraScheduler {
-    private final DrtTaskFactory taskFactory;
-    private final LeastCostPathCalculator router;
-    private final TravelTime travelTime;
-
-    private final double stopDuration;
-    private final boolean checkDeterminsticTravelTimes;
-    private final boolean reroutingDuringScheduling;
-
-    private final org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter operationalVoter;
-
-    private final StayTaskEndTimeCalculator endTimeCalculator;
-
-    public ShiftAlonsoMoraScheduler(DrtTaskFactory taskFactory, double stopDuration,
-                                    boolean checkDeterminsticTravelTimes, boolean reroutingDuringScheduling, TravelTime travelTime,
-                                    Network network, StayTaskEndTimeCalculator endTimeCalculator, LeastCostPathCalculator router,
-                                    org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter operationalVoter) {
-        this.taskFactory = taskFactory;
-        this.stopDuration = stopDuration;
-        this.checkDeterminsticTravelTimes = checkDeterminsticTravelTimes;
-        this.reroutingDuringScheduling = reroutingDuringScheduling;
-        this.endTimeCalculator = endTimeCalculator;
-        this.travelTime = travelTime;
-        this.router = router;
-        this.operationalVoter = operationalVoter;
-    }
-
-    /**
-     * This is an additional check that makes sure that the result of the travel
-     * function does include stops for requests that are currently on board of the
-     * vehicle but have not been dropped off yet.
-     */
-    private void verifyOnboardRequestsAreDroppedOff(AlonsoMoraVehicle vehicle, List<AlonsoMoraStop> stops) {
-        Set<AlonsoMoraRequest> onboardRequests = new HashSet<>(
-                vehicle.getOnboardRequests().stream().filter(r -> !r.isDroppedOff()).collect(Collectors.toSet()));
-
-        for (AlonsoMoraStop stop : stops) {
-            switch (stop.getType()) {
-                case Dropoff:
-                    onboardRequests.remove(stop.getRequest());
-                    break;
-                case Pickup:
-                    Verify.verify(!vehicle.getOnboardRequests().contains(stop.getRequest()),
-                            "Cannot pick-up onboard request");
-                    break;
-                case Relocation:
-                    break;
-                default:
-                    throw new IllegalStateException();
-            }
-        }
-
-        Verify.verify(onboardRequests.size() == 0, "Some onboard requests are not dropped off");
-    }
-
-    /**
-     * This is an additional check that makes sure that pick-ups and drop-offs which
-     * are currently already in progress (task is started) are not added again as a
-     * stop. This can happen if the travel function is not implemented properly.
-     */
-    private void verifyActivePickupAndDropoff(AlonsoMoraVehicle vehicle, List<AlonsoMoraStop> stops) {
-        Task currentTask = vehicle.getVehicle().getSchedule().getCurrentTask();
-
-        if (currentTask instanceof DrtStopTask) {
-            DrtStopTask stopTask = (DrtStopTask) currentTask;
-
-            for (AlonsoMoraStop stop : stops) {
-                switch (stop.getType()) {
-                    case Dropoff:
-                        // This means that the stop list contains a stop with a request that is
-                        // currently being dropped off in the current task. As we don't want to add
-                        // another task with this request to the vehicle's schedule, this should not be
-                        // here. Most likely, this is an error in the TravelFunction.
-
-                        for (DrtRequest drtRequest : stop.getRequest().getDrtRequests()) {
-                            Verify.verify(!stopTask.getDropoffRequests().containsKey(drtRequest.getId()));
-                        }
-
-                        break;
-                    case Pickup:
-                        for (DrtRequest drtRequest : stop.getRequest().getDrtRequests()) {
-                            Verify.verify(!stopTask.getPickupRequests().containsKey(drtRequest.getId()));
-                        }
-
-                        break;
-                    case Relocation:
-                        break;
-                    default:
-                        throw new IllegalStateException();
-                }
-            }
-        }
-    }
-
-    private void verifyRelocationIsLast(List<AlonsoMoraStop> stops) {
-        for (AlonsoMoraStop stop : stops) {
-            if (stop.getType().equals(StopType.Relocation)) {
-                Verify.verify(stops.get(stops.size() - 1) == stop, "Relocation must be the last!");
-            }
-        }
-    }
-
-    public void schedule(AlonsoMoraVehicle vehicle, double now) {
-        List<AlonsoMoraStop> stops = vehicle.getRoute();
+	private final DrtTaskFactory taskFactory;
+	private final LeastCostPathCalculator router;
+	private final TravelTime travelTime;
+
+	private final PassengerStopDurationProvider stopDurationProvider;
+	private final double vehicleStopDuration;
+	private final boolean checkDeterminsticTravelTimes;
+	private final boolean reroutingDuringScheduling;
+
+	private final org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter operationalVoter;
+
+	private final StayTaskEndTimeCalculator endTimeCalculator;
+
+	public ShiftAlonsoMoraScheduler(DrtTaskFactory taskFactory, PassengerStopDurationProvider stopDurationProvider,
+			double vehicleStopDuration, boolean checkDeterminsticTravelTimes, boolean reroutingDuringScheduling,
+			TravelTime travelTime, Network network, StayTaskEndTimeCalculator endTimeCalculator,
+			LeastCostPathCalculator router,
+			org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter operationalVoter) {
+		this.taskFactory = taskFactory;
+		this.vehicleStopDuration = vehicleStopDuration;
+		this.checkDeterminsticTravelTimes = checkDeterminsticTravelTimes;
+		this.reroutingDuringScheduling = reroutingDuringScheduling;
+		this.endTimeCalculator = endTimeCalculator;
+		this.travelTime = travelTime;
+		this.router = router;
+		this.operationalVoter = operationalVoter;
+		this.stopDurationProvider = stopDurationProvider;
+	}
+
+	/**
+	 * This is an additional check that makes sure that the result of the travel
+	 * function does include stops for requests that are currently on board of the
+	 * vehicle but have not been dropped off yet.
+	 */
+	private void verifyOnboardRequestsAreDroppedOff(AlonsoMoraVehicle vehicle, List<AlonsoMoraStop> stops) {
+		Set<AlonsoMoraRequest> onboardRequests = new HashSet<>(
+				vehicle.getOnboardRequests().stream().filter(r -> !r.isDroppedOff()).collect(Collectors.toSet()));
+
+		for (AlonsoMoraStop stop : stops) {
+			switch (stop.getType()) {
+			case Dropoff:
+				onboardRequests.remove(stop.getRequest());
+				break;
+			case Pickup:
+				Verify.verify(!vehicle.getOnboardRequests().contains(stop.getRequest()),
+						"Cannot pick-up onboard request");
+				break;
+			case Relocation:
+				break;
+			default:
+				throw new IllegalStateException();
+			}
+		}
+
+		Verify.verify(onboardRequests.size() == 0, "Some onboard requests are not dropped off");
+	}
+
+	/**
+	 * This is an additional check that makes sure that pick-ups and drop-offs which
+	 * are currently already in progress (task is started) are not added again as a
+	 * stop. This can happen if the travel function is not implemented properly.
+	 */
+	private void verifyActivePickupAndDropoff(AlonsoMoraVehicle vehicle, List<AlonsoMoraStop> stops) {
+		Task currentTask = vehicle.getVehicle().getSchedule().getCurrentTask();
+
+		if (currentTask instanceof DrtStopTask) {
+			DrtStopTask stopTask = (DrtStopTask) currentTask;
+
+			for (AlonsoMoraStop stop : stops) {
+				switch (stop.getType()) {
+				case Dropoff: {
+					// This means that the stop list contains a stop with a request that is
+					// currently being dropped off in the current task. As we don't want to add
+					// another task with this request to the vehicle's schedule, this should not be
+					// here. Most likely, this is an error in the TravelFunction.
+
+					AcceptedDrtRequest drtRequest = stop.getRequest().getAcceptedDrtRequest();
+					Verify.verify(!stopTask.getDropoffRequests().containsKey(drtRequest.getId()));
+
+					break;
+				}
+				case Pickup: {
+					AcceptedDrtRequest drtRequest = stop.getRequest().getAcceptedDrtRequest();
+					Verify.verify(!stopTask.getPickupRequests().containsKey(drtRequest.getId()));
+
+					break;
+				}
+				case Relocation:
+					break;
+				default:
+					throw new IllegalStateException();
+				}
+			}
+		}
+	}
+
+	private void verifyRelocationIsLast(List<AlonsoMoraStop> stops) {
+		for (AlonsoMoraStop stop : stops) {
+			if (stop.getType().equals(StopType.Relocation)) {
+				Verify.verify(stops.get(stops.size() - 1) == stop, "Relocation must be the last!");
+			}
+		}
+	}
 
-        verifyOnboardRequestsAreDroppedOff(vehicle, stops);
-        verifyActivePickupAndDropoff(vehicle, stops);
-        verifyRelocationIsLast(stops);
+	public void schedule(AlonsoMoraVehicle vehicle, double now) {
+		List<AlonsoMoraStop> stops = vehicle.getRoute();
 
-        DvrpVehicle dvrpVehicle = vehicle.getVehicle();
-        Schedule schedule = dvrpVehicle.getSchedule();
+		verifyOnboardRequestsAreDroppedOff(vehicle, stops);
+		verifyActivePickupAndDropoff(vehicle, stops);
+		verifyRelocationIsLast(stops);
 
-        Task currentTask = schedule.getCurrentTask();
+		DvrpVehicle dvrpVehicle = vehicle.getVehicle();
+		Schedule schedule = dvrpVehicle.getSchedule();
 
-        // Verify that we understand what is in the schedule
-        for (int index = currentTask.getTaskIdx(); index < schedule.getTaskCount(); index++) {
-            Task task = schedule.getTasks().get(index);
+		Task currentTask = schedule.getCurrentTask();
 
-            boolean isStayTask = task instanceof DrtStayTask;
-            boolean isStopTask = task instanceof DrtStopTask;
-            boolean isDriveTask = task instanceof DrtDriveTask;
-            boolean isWaitForStopTask = task instanceof WaitForStopTask;
-            boolean isOperationalTask = operationalVoter.isOperationalTask(task);
+		// Verify that we understand what is in the schedule
+		for (int index = currentTask.getTaskIdx(); index < schedule.getTaskCount(); index++) {
+			Task task = schedule.getTasks().get(index);
 
-            Verify.verify(isStayTask || isStopTask || isDriveTask || isWaitForStopTask || isOperationalTask,
-                    "Don't know what to do with this task");
-        }
-
-        // Collect operational tasks that need to be re-added at the end
-        List<Task> operationalTasks = new LinkedList<>();
-
-        for (int i = schedule.getCurrentTask().getTaskIdx() + 1; i < schedule.getTaskCount(); i++) {
-            Task task = schedule.getTasks().get(i);
-
-            if (operationalVoter.isOperationalTask(task)) {
-                operationalTasks.add(task);
-            }
-        }
-
-        // Clean up the task chain to reconstruct it
-        while (schedule.getTasks().get(schedule.getTaskCount() - 1).getStatus().equals(TaskStatus.PLANNED)) {
-            schedule.removeLastTask();
-        }
-
-        // Start rebuilding the schedule
-
-        Link currentLink = null;
-
-        if (operationalVoter.isOperationalTask(currentTask)) {
-            currentLink = ((StayTask) currentTask).getLink();
-        } else if (currentTask instanceof StayTask) {
-            currentLink = ((StayTask) currentTask).getLink();
-
-            if (currentTask instanceof DrtStayTask || currentTask instanceof WaitForStopTask) {
-                // If we are currently staying somewhere, end the stay task now
-                currentTask.setEndTime(now);
-            }
-        } else if (currentTask instanceof DriveTask) {
-            // Will be handled individually further below
-        } else {
-            throw new IllegalStateException();
-        }
-
-        for (int index = 0; index < stops.size(); index++) {
-            AlonsoMoraStop stop = stops.get(index);
-
-            if (stop.getType().equals(StopType.Pickup) || stop.getType().equals(StopType.Dropoff)) {
-                // We want to add a pickup or dropoff
-
-                if (index == 0 && currentTask instanceof DriveTask) {
-                    // Vehicle is driving, so we may need to divert it
-
-                    DriveTask driveTask = (DriveTask) currentTask;
-
-                    if (!driveTask.getTaskType().equals(DrtDriveTask.TYPE)) {
-                        // Not a standard drive task, so we have to abort it
-
-                        OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
-                        LinkTimePair diversionPoint = tracker.getDiversionPoint();
-                        VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
-                        tracker.divertPath(diversionPath);
-
-                        currentLink = diversionPoint.link;
-                    } else {
-                        // We have a standard drive task, so we can simply divert it
-
-                        if (driveTask.getPath().getToLink() != stop.getLink() || reroutingDuringScheduling) {
-                            OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
-                            LinkTimePair diversionPoint = tracker.getDiversionPoint();
-                            VrpPathWithTravelData diversionPath = VrpPaths.calcAndCreatePathForDiversion(diversionPoint,
-                                    stop.getLink(), router, travelTime);
-                            tracker.divertPath(diversionPath);
-                        }
-
-                        currentLink = stop.getLink();
-                    }
-                }
-
-                if (currentLink != stop.getLink()) {
-                    // Add a conventional drive (e.g. after a previous stop)
-
-                    VrpPathWithTravelData drivePath = VrpPaths.calcAndCreatePath(currentLink, stop.getLink(),
-                            currentTask.getEndTime(), router, travelTime);
-
-                    currentTask = taskFactory.createDriveTask(dvrpVehicle, drivePath, DrtDriveTask.TYPE);
-                    schedule.addTask(currentTask);
-
-                    currentLink = stop.getLink();
-                }
-
-                // For pre-booked requests, we may need to wait for the customer
-                if (stop.getType().equals(StopType.Pickup)) {
-                    double expectedStartTime = stop.getRequest().getEarliestPickupTime() - stopDuration;
-
-                    if (expectedStartTime > currentTask.getEndTime()) {
-                        currentTask = new WaitForStopTask(currentTask.getEndTime(), expectedStartTime, currentLink);
-                        schedule.addTask(currentTask);
-                    }
-                }
-
-                // Now, retrieve or create the stop task
-
-                DrtStopTask stopTask = null;
-
-                if (currentTask instanceof DrtStopTask && index > 0) {
-                    // We're at a stop task and the stop task is not already started, so we can add
-                    // the requests to this stop
-
-                    stopTask = (DrtStopTask) currentTask;
-                } else {
-                    // Create a new stop task as we are not at a previously created stop
-                    stopTask = taskFactory.createStopTask(dvrpVehicle, currentTask.getEndTime(),
-                            currentTask.getEndTime() + stopDuration, stop.getLink());
-
-                    schedule.addTask(stopTask);
-                    currentTask = stopTask;
-                }
-
-                // Add requests to the stop task
-
-                if (stop.getType().equals(StopType.Pickup)) {
-                    stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addPickupRequest);
-                    stop.getRequest().setPickupTask(vehicle, stopTask);
-
-                    if (checkDeterminsticTravelTimes) {
-                        Verify.verify(stop.getTime() == stopTask.getEndTime(),
-                                "Checking for determinstic travel times and found mismatch between expected stop time and scheduled stop time.");
-                        Verify.verify(stop.getTime() <= stop.getRequest().getPlannedPickupTime(),
-                                "Checking for determinstic travel times and found mismatch between expected stop time and planned stop time.");
-                    }
-                } else if (stop.getType().equals(StopType.Dropoff)) {
-                    stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addDropoffRequest);
-                    stop.getRequest().setDropoffTask(vehicle, stopTask);
-
-                    if (checkDeterminsticTravelTimes) {
-                        Verify.verify(stop.getTime() == stopTask.getBeginTime(),
-                                "Checking for determinstic travel times and found mismatch between expected stop time and scheduled stop time.");
-                    }
-                } else {
-                    throw new IllegalStateException();
-                }
-            } else if (stop.getType().equals(StopType.Relocation)) {
-                // We want to add a relocation to the schedule
-
-                if (index == 0 && currentTask instanceof DriveTask) {
-                    // Vehicle is driving, so we may need to divert it
-
-                    DriveTask driveTask = (DriveTask) currentTask;
-
-                    if (!driveTask.getTaskType().equals(EmptyVehicleRelocator.RELOCATE_VEHICLE_TASK_TYPE)) {
-                        // Not a relocation drive task, so we have to abort it
-
-                        OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
-                        LinkTimePair diversionPoint = tracker.getDiversionPoint();
-                        VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
-                        tracker.divertPath(diversionPath);
-
-                        currentLink = diversionPoint.link;
-                    } else {
-                        // We have a relocation drive task, so we can simply divert it
-
-                        if (driveTask.getPath().getToLink() != stop.getLink() || reroutingDuringScheduling) {
-                            OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
-                            LinkTimePair diversionPoint = tracker.getDiversionPoint();
-                            VrpPathWithTravelData diversionPath = VrpPaths.calcAndCreatePathForDiversion(diversionPoint,
-                                    stop.getLink(), router, travelTime);
-                            tracker.divertPath(diversionPath);
-                        }
-
-                        currentLink = stop.getLink();
-                    }
-                }
-
-                if (currentLink != stop.getLink()) {
-                    // Add a relocation drive (e.g. after a stop or aborting another drive)
-
-                    VrpPathWithTravelData drivePath = VrpPaths.calcAndCreatePath(currentLink, stop.getLink(),
-                            currentTask.getEndTime(), router, travelTime);
-                    currentTask = taskFactory.createDriveTask(dvrpVehicle, drivePath,
-                            EmptyVehicleRelocator.RELOCATE_VEHICLE_TASK_TYPE);
-                    schedule.addTask(currentTask);
-
-                    currentLink = stop.getLink();
-                }
-            } else {
-                throw new IllegalStateException();
-            }
-        }
-
-        if (stops.size() == 0 && operationalTasks.size() == 0) {
-            if (currentTask instanceof DriveTask) {
-                // We have neither stops nor relocation -> stop the drive
-
-                DriveTask driveTask = (DriveTask) currentTask;
-
-                OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
-                LinkTimePair diversionPoint = tracker.getDiversionPoint();
-                VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
-                tracker.divertPath(diversionPath);
-
-                currentLink = diversionPoint.link;
-            }
-        }
-
-        // Add operational tasks
-
-        if (operationalTasks.size() > 0) {
-            for (int index = 0; index < operationalTasks.size(); index++) {
-                Task operationalTask = operationalTasks.get(index);
-                Link operationalLink = ((StayTask) operationalTask).getLink();
-
-                DrtTaskType driveTaskType = operationalVoter.getDriveTaskType(operationalTask);
-
-                if (index == 0 && stops.size() == 0 && currentTask instanceof DriveTask) {
-                    // Vehicle is driving, so we may need to divert it
-
-                    DriveTask driveTask = (DriveTask) currentTask;
-
-                    if (!driveTask.getTaskType().equals(driveTaskType)) {
-                        // Not a standard drive task, so we have to abort it
-
-                        OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
-                        LinkTimePair diversionPoint = tracker.getDiversionPoint();
-                        VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
-                        tracker.divertPath(diversionPath);
-
-                        currentLink = diversionPoint.link;
-                    } else {
-                        // We have a fitting drive task, so we can simply divert it
-
-                        if (driveTask.getPath().getToLink() != operationalLink || reroutingDuringScheduling) {
-                            OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
-                            LinkTimePair diversionPoint = tracker.getDiversionPoint();
-                            VrpPathWithTravelData diversionPath = VrpPaths.calcAndCreatePathForDiversion(diversionPoint,
-                                    operationalLink, router, travelTime);
-                            tracker.divertPath(diversionPath);
-                        }
-
-                        currentLink = operationalLink;
-                    }
-                }
-
-                if (currentLink != operationalLink) {
-                    // Add a drive
-
-                    VrpPathWithTravelData drivePath = VrpPaths.calcAndCreatePath(currentLink, operationalLink,
-                            currentTask.getEndTime(), router, travelTime);
-
-                    currentTask = taskFactory.createDriveTask(dvrpVehicle, drivePath, driveTaskType);
-                    schedule.addTask(currentTask);
-
-                    currentLink = operationalLink;
-                }
-
-                if (operationalTask.getBeginTime() > currentTask.getEndTime()) {
-                    if(operationalTask instanceof ShiftBreakTask) {
-                        // We need to fill the gap with a stay task if break is not planned to start yet
-                        double earliestBreakStartTime = ((ShiftBreakTask) operationalTask).getShiftBreak().getEarliestBreakStartTime();
-                        if (earliestBreakStartTime > currentTask.getEndTime()) {
-                            if(currentTask instanceof DrtStayTask) {
-                                currentTask.setEndTime(earliestBreakStartTime);
-                            } else {
-                                currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
-                                        earliestBreakStartTime, operationalLink);
-                                schedule.addTask(currentTask);
-                            }
-                        }
-                    } else if (operationalTask instanceof ShiftChangeOverTask) {
-                        // We need to fill the gap with a stay task
-                        double shiftEndTime = ((ShiftChangeOverTask) operationalTask).getShift().getEndTime();
-                        if(shiftEndTime > currentTask.getEndTime()) {
-                            if(currentTask instanceof DrtStayTask) {
-                                currentTask.setEndTime(shiftEndTime);
-                            } else {
-                                currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
-                                        shiftEndTime, operationalLink);
-                                schedule.addTask(currentTask);
-                            }
-                        }
-                    }
-                }
-
-                double endTime = endTimeCalculator.calcNewEndTime(dvrpVehicle, (StayTask) operationalTask,
-                        currentTask.getEndTime());
-                operationalTask.setBeginTime(currentTask.getEndTime());
-                operationalTask.setEndTime(endTime);
-
-                currentTask = operationalTask;
-                schedule.addTask(currentTask);
-            }
-        }
-
-        // Finally, add stay task until the end of the schedule
-
-        if (currentTask instanceof DrtStayTask) {
-            currentTask.setEndTime(Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()));
-        }else if(currentTask instanceof WaitForShiftStayTask)  {
-            if(currentTask.getEndTime() == now) {
-                //if the shift just started, re-create the stay task
-                StayTask stayTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
-                        Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()), currentLink);
-                schedule.addTask(stayTask);
-            }
-        } else {
-            StayTask stayTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
-                    Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()), currentLink);
-            schedule.addTask(stayTask);
-        }
-    }
+			boolean isStayTask = task instanceof DrtStayTask;
+			boolean isStopTask = task instanceof DrtStopTask;
+			boolean isDriveTask = task instanceof DrtDriveTask;
+			boolean isOperationalTask = operationalVoter.isOperationalTask(task);
+
+			Verify.verify(isStayTask || isStopTask || isDriveTask || isOperationalTask,
+					"Don't know what to do with this task");
+		}
+
+		// Collect operational tasks that need to be re-added at the end
+		List<Task> operationalTasks = new LinkedList<>();
+
+		for (int i = schedule.getCurrentTask().getTaskIdx() + 1; i < schedule.getTaskCount(); i++) {
+			Task task = schedule.getTasks().get(i);
+
+			if (operationalVoter.isOperationalTask(task)) {
+				operationalTasks.add(task);
+			}
+		}
+
+		// Clean up the task chain to reconstruct it
+		while (schedule.getTasks().get(schedule.getTaskCount() - 1).getStatus().equals(TaskStatus.PLANNED)) {
+			schedule.removeLastTask();
+		}
+
+		// Start rebuilding the schedule
+
+		Link currentLink = null;
+
+		if (operationalVoter.isOperationalTask(currentTask)) {
+			currentLink = ((StayTask) currentTask).getLink();
+		} else if (currentTask instanceof StayTask) {
+			currentLink = ((StayTask) currentTask).getLink();
+
+			if (currentTask instanceof DrtStayTask) {
+				// If we are currently staying somewhere, end the stay task now
+				currentTask.setEndTime(now);
+			}
+		} else if (currentTask instanceof DriveTask) {
+			// Will be handled individually further below
+		} else {
+			throw new IllegalStateException();
+		}
+
+		for (int index = 0; index < stops.size(); index++) {
+			AlonsoMoraStop stop = stops.get(index);
+
+			if (stop.getType().equals(StopType.Pickup) || stop.getType().equals(StopType.Dropoff)) {
+				// We want to add a pickup or dropoff
+
+				if (index == 0 && currentTask instanceof DriveTask) {
+					// Vehicle is driving, so we may need to divert it
+
+					DriveTask driveTask = (DriveTask) currentTask;
+
+					if (!driveTask.getTaskType().equals(DrtDriveTask.TYPE)) {
+						// Not a standard drive task, so we have to abort it
+
+						OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
+						LinkTimePair diversionPoint = tracker.getDiversionPoint();
+						VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
+						tracker.divertPath(diversionPath);
+
+						currentLink = diversionPoint.link;
+					} else {
+						// We have a standard drive task, so we can simply divert it
+
+						if (driveTask.getPath().getToLink() != stop.getLink() || reroutingDuringScheduling) {
+							OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
+							LinkTimePair diversionPoint = tracker.getDiversionPoint();
+							VrpPathWithTravelData diversionPath = VrpPaths.calcAndCreatePathForDiversion(diversionPoint,
+									stop.getLink(), router, travelTime);
+							tracker.divertPath(diversionPath);
+						}
+
+						currentLink = stop.getLink();
+					}
+				}
+
+				if (currentLink != stop.getLink()) {
+					// Add a conventional drive (e.g. after a previous stop)
+
+					VrpPathWithTravelData drivePath = VrpPaths.calcAndCreatePath(currentLink, stop.getLink(),
+							currentTask.getEndTime(), router, travelTime);
+
+					currentTask = taskFactory.createDriveTask(dvrpVehicle, drivePath, DrtDriveTask.TYPE);
+					schedule.addTask(currentTask);
+
+					currentLink = stop.getLink();
+				}
+
+				// For pre-booked requests, we may need to wait for the customer
+				if (stop.getType().equals(StopType.Pickup)) {
+					double earliestStartTime = stop.getRequest().getEarliestPickupTime();
+
+					if (earliestStartTime > currentTask.getEndTime()) {
+						if (currentTask instanceof DrtStayTask) {
+							currentTask.setEndTime(earliestStartTime);
+						} else {
+							currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
+									earliestStartTime, currentLink);
+							schedule.addTask(currentTask);
+						}
+					}
+				}
+
+				// Obtain the stop duration
+				final double passengerStopDuration;
+
+				if (stop.getType().equals(StopType.Pickup)) {
+					passengerStopDuration = stopDurationProvider.calcPickupDuration(dvrpVehicle,
+							stop.getRequest().getDrtRequest());
+				} else if (stop.getType().equals(StopType.Dropoff)) {
+					passengerStopDuration = stopDurationProvider.calcDropoffDuration(dvrpVehicle,
+							stop.getRequest().getDrtRequest());
+				} else {
+					throw new IllegalStateException();
+				}
+
+				// Now, retrieve or create the stop task
+
+				DrtStopTask stopTask = null;
+
+				if (currentTask instanceof DrtStopTask && index > 0) {
+					// We're at a stop task and the stop task is not already started, so we can add
+					// the requests to this stop
+
+					stopTask = (DrtStopTask) currentTask;
+				} else {
+					// Create a new stop task as we are not at a previously created stop
+					double stopDuration = Math.max(vehicleStopDuration, passengerStopDuration);
+
+					stopTask = taskFactory.createStopTask(dvrpVehicle, currentTask.getEndTime(),
+							currentTask.getEndTime() + stopDuration, stop.getLink());
+
+					schedule.addTask(stopTask);
+					currentTask = stopTask;
+				}
+
+				// Add requests to the stop task
+
+				if (stop.getType().equals(StopType.Pickup)) {
+					stopTask.addPickupRequest(stop.getRequest().getAcceptedDrtRequest());
+					stop.getRequest().setPickupTask(vehicle, stopTask);
+
+					double passengerDepartureTime = Math.max(stopTask.getBeginTime(),
+							stop.getRequest().getEarliestPickupTime());
+					double passengerPickupTime = passengerDepartureTime + passengerStopDuration;
+					stopTask.setEndTime(Math.max(stopTask.getEndTime(), passengerPickupTime));
+
+					if (checkDeterminsticTravelTimes) {
+						Verify.verify(stop.getTime() == stopTask.getEndTime(),
+								"Checking for determinstic travel times and found mismatch between expected stop time and scheduled stop time.");
+						Verify.verify(stop.getTime() <= stop.getRequest().getPlannedPickupTime(),
+								"Checking for determinstic travel times and found mismatch between expected stop time and planned stop time.");
+					}
+				} else if (stop.getType().equals(StopType.Dropoff)) {
+					stopTask.addDropoffRequest(stop.getRequest().getAcceptedDrtRequest());
+					stop.getRequest().setDropoffTask(vehicle, stopTask);
+					stopTask.setEndTime(
+							Math.max(stopTask.getEndTime(), stopTask.getBeginTime() + passengerStopDuration));
+
+					if (checkDeterminsticTravelTimes) {
+						Verify.verify(stop.getTime() == stopTask.getBeginTime(),
+								"Checking for determinstic travel times and found mismatch between expected stop time and scheduled stop time.");
+					}
+				} else {
+					throw new IllegalStateException();
+				}
+			} else if (stop.getType().equals(StopType.Relocation)) {
+				// We want to add a relocation to the schedule
+
+				if (index == 0 && currentTask instanceof DriveTask) {
+					// Vehicle is driving, so we may need to divert it
+
+					DriveTask driveTask = (DriveTask) currentTask;
+
+					if (!driveTask.getTaskType().equals(EmptyVehicleRelocator.RELOCATE_VEHICLE_TASK_TYPE)) {
+						// Not a relocation drive task, so we have to abort it
+
+						OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
+						LinkTimePair diversionPoint = tracker.getDiversionPoint();
+						VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
+						tracker.divertPath(diversionPath);
+
+						currentLink = diversionPoint.link;
+					} else {
+						// We have a relocation drive task, so we can simply divert it
+
+						if (driveTask.getPath().getToLink() != stop.getLink() || reroutingDuringScheduling) {
+							OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
+							LinkTimePair diversionPoint = tracker.getDiversionPoint();
+							VrpPathWithTravelData diversionPath = VrpPaths.calcAndCreatePathForDiversion(diversionPoint,
+									stop.getLink(), router, travelTime);
+							tracker.divertPath(diversionPath);
+						}
+
+						currentLink = stop.getLink();
+					}
+				}
+
+				if (currentLink != stop.getLink()) {
+					// Add a relocation drive (e.g. after a stop or aborting another drive)
+
+					VrpPathWithTravelData drivePath = VrpPaths.calcAndCreatePath(currentLink, stop.getLink(),
+							currentTask.getEndTime(), router, travelTime);
+					currentTask = taskFactory.createDriveTask(dvrpVehicle, drivePath,
+							EmptyVehicleRelocator.RELOCATE_VEHICLE_TASK_TYPE);
+					schedule.addTask(currentTask);
+
+					currentLink = stop.getLink();
+				}
+			} else {
+				throw new IllegalStateException();
+			}
+		}
+
+		if (stops.size() == 0 && operationalTasks.size() == 0) {
+			if (currentTask instanceof DriveTask) {
+				// We have neither stops nor relocation -> stop the drive
+
+				DriveTask driveTask = (DriveTask) currentTask;
+
+				OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
+				LinkTimePair diversionPoint = tracker.getDiversionPoint();
+				VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
+				tracker.divertPath(diversionPath);
+
+				currentLink = diversionPoint.link;
+			}
+		}
+
+		// Add operational tasks
+
+		if (operationalTasks.size() > 0) {
+			for (int index = 0; index < operationalTasks.size(); index++) {
+				Task operationalTask = operationalTasks.get(index);
+				Link operationalLink = ((StayTask) operationalTask).getLink();
+
+				DrtTaskType driveTaskType = operationalVoter.getDriveTaskType(operationalTask);
+
+				if (index == 0 && stops.size() == 0 && currentTask instanceof DriveTask) {
+					// Vehicle is driving, so we may need to divert it
+
+					DriveTask driveTask = (DriveTask) currentTask;
+
+					if (!driveTask.getTaskType().equals(driveTaskType)) {
+						// Not a standard drive task, so we have to abort it
+
+						OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
+						LinkTimePair diversionPoint = tracker.getDiversionPoint();
+						VrpPathWithTravelData diversionPath = VrpPaths.createZeroLengthPathForDiversion(diversionPoint);
+						tracker.divertPath(diversionPath);
+
+						currentLink = diversionPoint.link;
+					} else {
+						// We have a fitting drive task, so we can simply divert it
+
+						if (driveTask.getPath().getToLink() != operationalLink || reroutingDuringScheduling) {
+							OnlineDriveTaskTracker tracker = (OnlineDriveTaskTracker) driveTask.getTaskTracker();
+							LinkTimePair diversionPoint = tracker.getDiversionPoint();
+							VrpPathWithTravelData diversionPath = VrpPaths.calcAndCreatePathForDiversion(diversionPoint,
+									operationalLink, router, travelTime);
+							tracker.divertPath(diversionPath);
+						}
+
+						currentLink = operationalLink;
+					}
+				}
+
+				if (currentLink != operationalLink) {
+					// Add a drive
+
+					VrpPathWithTravelData drivePath = VrpPaths.calcAndCreatePath(currentLink, operationalLink,
+							currentTask.getEndTime(), router, travelTime);
+
+					currentTask = taskFactory.createDriveTask(dvrpVehicle, drivePath, driveTaskType);
+					schedule.addTask(currentTask);
+
+					currentLink = operationalLink;
+				}
+
+				if (operationalTask.getBeginTime() > currentTask.getEndTime()) {
+					if (operationalTask instanceof ShiftBreakTask) {
+						// We need to fill the gap with a stay task if break is not planned to start yet
+						double earliestBreakStartTime = ((ShiftBreakTask) operationalTask).getShiftBreak()
+								.getEarliestBreakStartTime();
+						if (earliestBreakStartTime > currentTask.getEndTime()) {
+							if (currentTask instanceof DrtStayTask) {
+								currentTask.setEndTime(earliestBreakStartTime);
+							} else {
+								currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
+										earliestBreakStartTime, operationalLink);
+								schedule.addTask(currentTask);
+							}
+						}
+					} else if (operationalTask instanceof ShiftChangeOverTask) {
+						// We need to fill the gap with a stay task
+						double shiftEndTime = ((ShiftChangeOverTask) operationalTask).getShift().getEndTime();
+						if (shiftEndTime > currentTask.getEndTime()) {
+							if (currentTask instanceof DrtStayTask) {
+								currentTask.setEndTime(shiftEndTime);
+							} else {
+								currentTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
+										shiftEndTime, operationalLink);
+								schedule.addTask(currentTask);
+							}
+						}
+					}
+				}
+
+				double endTime = endTimeCalculator.calcNewEndTime(dvrpVehicle, (StayTask) operationalTask,
+						currentTask.getEndTime());
+				operationalTask.setBeginTime(currentTask.getEndTime());
+				operationalTask.setEndTime(endTime);
+
+				currentTask = operationalTask;
+				schedule.addTask(currentTask);
+			}
+		}
+
+		// Finally, add stay task until the end of the schedule
+
+		if (currentTask instanceof DrtStayTask) {
+			currentTask.setEndTime(Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()));
+		} else if (currentTask instanceof WaitForShiftStayTask) {
+			if (currentTask.getEndTime() == now) {
+				// if the shift just started, re-create the stay task
+				StayTask stayTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
+						Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()), currentLink);
+				schedule.addTask(stayTask);
+			}
+		} else {
+			StayTask stayTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
+					Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()), currentLink);
+			schedule.addTask(stayTask);
+		}
+	}
 }
-

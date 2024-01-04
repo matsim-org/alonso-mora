@@ -19,6 +19,7 @@ import org.matsim.alonso_mora.algorithm.function.sequence.SequenceGenerator;
 import org.matsim.alonso_mora.algorithm.function.sequence.SequenceGeneratorFactory;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.dvrp.util.LinkTimePair;
 
 import com.google.common.base.Verify;
@@ -32,7 +33,9 @@ import com.google.common.base.Verify;
 public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 	private final TravelTimeEstimator travelTimeEstimator;
 	private final SequenceGeneratorFactory generatorFactory;
-	private final double stopDuration;
+
+	private final PassengerStopDurationProvider stopDurationProvider;
+	private final double vehicleStopDuration;
 
 	private final boolean allowPickupViolations;
 	private final boolean allowPickupsWithDropoffViolations;
@@ -46,11 +49,13 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 	private final boolean preferNonViolation;
 
 	public DefaultAlonsoMoraFunction(TravelTimeEstimator travelTimeEstimator, SequenceGeneratorFactory generatorFactory,
-			double stopDuration, boolean allowPickupViolations, boolean allowPickupsWithDropoffViolations,
+			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration,
+			boolean allowPickupViolations, boolean allowPickupsWithDropoffViolations,
 			boolean checkDeterminsticTravelTimes, Objective objective, Constraint constraint, double violationFactor,
 			double violationOffset, boolean preferNonViolation) {
 		this.travelTimeEstimator = travelTimeEstimator;
-		this.stopDuration = stopDuration;
+		this.vehicleStopDuration = vehicleStopDuration;
+		this.stopDurationProvider = stopDurationProvider;
 		this.generatorFactory = generatorFactory;
 
 		this.allowPickupViolations = allowPickupViolations;
@@ -82,13 +87,13 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 		Map<AlonsoMoraRequest, Double> requiredPickupTimes = new HashMap<>();
 		Map<AlonsoMoraRequest, Double> requiredDropoffTimes = new HashMap<>();
 
-		requiredPickupTimes.put(firstRequest, firstRequest.getLatestPickupTime());
-		requiredPickupTimes.put(secondRequest, secondRequest.getLatestPickupTime());
+		requiredPickupTimes.put(firstRequest, firstRequest.getPlannedPickupTime());
+		requiredPickupTimes.put(secondRequest, secondRequest.getPlannedPickupTime());
 		requiredDropoffTimes.put(firstRequest, firstRequest.getLatestDropoffTime());
 		requiredDropoffTimes.put(secondRequest, secondRequest.getLatestDropoffTime());
 
-		RouteTracker tracker = new RouteTracker(travelTimeEstimator, stopDuration, 0, now, Optional.empty(),
-				requiredPickupTimes, requiredDropoffTimes);
+		RouteTracker tracker = new RouteTracker(null, travelTimeEstimator, stopDurationProvider, vehicleStopDuration, 0,
+				now, Optional.empty(), requiredPickupTimes, requiredDropoffTimes);
 
 		while (generator.hasNext()) {
 			List<AlonsoMoraStop> stops = generator.get();
@@ -101,7 +106,7 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 
 				switch (stop.getType()) {
 				case Pickup:
-					double maximumPickupTime = stop.getRequest().getLatestPickupTime();
+					double maximumPickupTime = stop.getRequest().getPlannedPickupTime();
 					double calculatedPickupTime = stop.getTime();
 
 					if (calculatedPickupTime > maximumPickupTime) {
@@ -205,7 +210,7 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 		SequenceGenerator generator = generatorFactory.createGenerator(vehicle, onboardRequests, requests, now);
 
 		// Set up the timing and occupancy tracker
-		RouteTracker tracker = new RouteTracker(travelTimeEstimator, stopDuration,
+		RouteTracker tracker = new RouteTracker(vehicle, travelTimeEstimator, stopDurationProvider, vehicleStopDuration,
 				onboardRequests.stream().mapToInt(AlonsoMoraRequest::getSize).sum(), diversion.time,
 				Optional.of(diversion.link), requiredPickupTimes, requiredDropoffTimes);
 
@@ -312,11 +317,11 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 			}
 
 			boolean hasViolations = totalViolations > 0.0;
-			
+
 			if (partialObjective > bestObjective) {
 				boolean initiallyValid = isValid;
 				isValid = false; // Per default invalid because worse than the one we know
-				
+
 				if (initiallyValid && preferNonViolation && bestHasViolations && !hasViolations) {
 					isValid = true; // Special case: We prefer non-violating solutions even if objective is worse
 				}
@@ -336,7 +341,7 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 			if (isValid) {
 				if (generator.isComplete()) {
 					// We found a new solution that is better than the old one (see objective
-					// contraint above)
+					// constraint above)
 					bestSolution = copySolution(stops);
 					bestObjective = partialObjective;
 					bestHasViolations = hasViolations;

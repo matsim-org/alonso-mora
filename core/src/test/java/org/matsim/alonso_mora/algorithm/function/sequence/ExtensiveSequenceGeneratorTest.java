@@ -1,11 +1,14 @@
 package org.matsim.alonso_mora.algorithm.function.sequence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.mockito.Mockito;
@@ -18,7 +21,7 @@ public class ExtensiveSequenceGeneratorTest {
 
 	private AlonsoMoraRequest createAlonsoMoraRequestMock() {
 		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request.getDrtRequests()).thenReturn(Collections.singleton(createDrtRequestMock()));
+		Mockito.when(request.getDrtRequest()).thenReturn(createDrtRequestMock());
 		return request;
 	}
 
@@ -42,8 +45,8 @@ public class ExtensiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(2, partial);
-		Assert.assertEquals(1, complete);
+		assertEquals(2, partial);
+		assertEquals(1, complete);
 	}
 
 	@Test
@@ -67,8 +70,8 @@ public class ExtensiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(18, partial);
-		Assert.assertEquals(6, complete);
+		assertEquals(18, partial);
+		assertEquals(6, complete);
 	}
 
 	@Test
@@ -91,8 +94,8 @@ public class ExtensiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(1, partial);
-		Assert.assertEquals(1, complete);
+		assertEquals(1, partial);
+		assertEquals(1, complete);
 	}
 
 	@Test
@@ -116,8 +119,8 @@ public class ExtensiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(4, partial);
-		Assert.assertEquals(2, complete);
+		assertEquals(4, partial);
+		assertEquals(2, complete);
 	}
 
 	@Test
@@ -146,8 +149,8 @@ public class ExtensiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(89, partial);
-		Assert.assertEquals(30, complete);
+		assertEquals(89, partial);
+		assertEquals(30, complete);
 	}
 
 	@Test
@@ -174,8 +177,8 @@ public class ExtensiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(7364, partial);
-		Assert.assertEquals(2520, complete);
+		assertEquals(7364, partial);
+		assertEquals(2520, complete);
 	}
 
 	@Test
@@ -186,21 +189,21 @@ public class ExtensiveSequenceGeneratorTest {
 
 		ExtensiveSequenceGenerator generator = new ExtensiveSequenceGenerator(requests, Collections.emptySet());
 
-		Assert.assertTrue(generator.hasNext());
-		Assert.assertEquals(1, generator.get().size());
+		assertTrue(generator.hasNext());
+		assertEquals(1, generator.get().size());
 
 		generator.abort();
 
-		Assert.assertTrue(generator.hasNext());
-		Assert.assertEquals(1, generator.get().size());
+		assertTrue(generator.hasNext());
+		assertEquals(1, generator.get().size());
 
 		generator.advance();
 
-		Assert.assertTrue(generator.hasNext());
-		Assert.assertEquals(2, generator.get().size());
+		assertTrue(generator.hasNext());
+		assertEquals(2, generator.get().size());
 
 		generator.advance();
 
-		Assert.assertFalse(generator.hasNext());
+		assertFalse(generator.hasNext());
 	}
 }

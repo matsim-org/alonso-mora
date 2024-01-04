@@ -21,7 +21,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
-import org.matsim.alonso_mora.AlonsoMoraSubmissionEvent;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution;
@@ -38,9 +37,11 @@ import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
+import org.matsim.contrib.drt.passenger.DrtOfferAcceptor;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DefaultDrtStopTask;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.fleet.Fleet;
 import org.matsim.contrib.dvrp.passenger.PassengerRequestRejectedEvent;
@@ -75,6 +76,7 @@ public class AlonsoMoraAlgorithm {
 	private final AlonsoMoraScheduler scheduler;
 	private final AlonsoMoraFunction function;
 	private final ForkJoinPool forkJoinPool;
+	private final DrtOfferAcceptor offerAcceptor;
 
 	private final EventsManager eventsManager;
 	private final String mode;
@@ -93,14 +95,16 @@ public class AlonsoMoraAlgorithm {
 	private final int maximumOccupancy;
 
 	private final TravelTimeEstimator travelTimeEstimator;
-	private final double stopDuration;
+	private final PassengerStopDurationProvider stopDurationProvider;
 
 	private final AlgorithmSettings settings;
+	private final double vehicleStopDuration;
 
 	public AlonsoMoraAlgorithm(Fleet fleet, AssignmentSolver assignmentSolver, RelocationSolver rebalancingSolver,
 			AlonsoMoraFunction function, AlonsoMoraScheduler scheduler, EventsManager eventsManager, String mode,
 			AlonsoMoraVehicleFactory vehicleFactory, ForkJoinPool forkJoinPool, TravelTimeEstimator travelTimeEstimator,
-			double stopDuration, AlgorithmSettings settings) {
+			PassengerStopDurationProvider stopDurationProvider, AlgorithmSettings settings, DrtOfferAcceptor offerAcceptor,
+			double vehicleStopDuration) {
 		this.assignmentSolver = assignmentSolver;
 		this.rebalancingSolver = rebalancingSolver;
 		this.scheduler = scheduler;
@@ -109,8 +113,10 @@ public class AlonsoMoraAlgorithm {
 		this.function = function;
 		this.forkJoinPool = forkJoinPool;
 		this.travelTimeEstimator = travelTimeEstimator;
-		this.stopDuration = stopDuration;
+		this.stopDurationProvider = stopDurationProvider;
 		this.settings = settings;
+		this.offerAcceptor = offerAcceptor;
+		this.vehicleStopDuration = vehicleStopDuration;
 
 		// Create vehicle wrappers
 		vehicles = new ArrayList<>(fleet.getVehicles().size());
@@ -225,10 +231,10 @@ public class AlonsoMoraAlgorithm {
 			if (now > request.getLatestAssignmentTime()) {
 				iterator.remove();
 
-				for (DrtRequest drtRequest : request.getDrtRequests()) {
-					eventsManager.processEvent(new PassengerRequestRejectedEvent(now, mode, drtRequest.getId(),
-							drtRequest.getPassengerId(), "queue time exeeded"));
-				}
+				DrtRequest drtRequest = request.getDrtRequest();
+
+				eventsManager.processEvent(new PassengerRequestRejectedEvent(now, mode, drtRequest.getId(),
+						drtRequest.getPassengerIds(), "queue time exeeded"));
 
 				numberOfRejectedRequests++;
 			}
@@ -239,11 +245,6 @@ public class AlonsoMoraAlgorithm {
 		 * create events to notify submission.s
 		 */
 		queuedRequests.addAll(newRequests);
-
-		for (AlonsoMoraRequest request : newRequests) {
-			eventsManager.processEvent(new AlonsoMoraSubmissionEvent(now,
-					request.getDrtRequests().stream().map(r -> r.getId()).collect(Collectors.toSet())));
-		}
 	}
 
 	/**
@@ -317,7 +318,7 @@ public class AlonsoMoraAlgorithm {
 						v.setRoute(updatedRoute);
 
 						if (updatedRoute.size() > 0) {
-							RouteTracker congestionTracker = new RouteTracker(travelTimeEstimator, stopDuration, 0,
+							RouteTracker congestionTracker = new RouteTracker(v, travelTimeEstimator, stopDurationProvider, vehicleStopDuration, 0,
 									diversion.time, Optional.of(diversion.link));
 							congestionTracker.setDrivingState(v);
 							congestionTracker.update(v.getRoute());
@@ -434,11 +435,7 @@ public class AlonsoMoraAlgorithm {
 		for (AlonsoMoraTrip trip : solution.trips) {
 			// Find information for each request along the sequence
 			for (AlonsoMoraRequest request : trip.getRequests()) {
-				Verify.verify(newAssignedRequests.add(request), "Request is assigned twice!");
-
-				// Set the vehicle
-				request.setVehicle(trip.getVehicle());
-
+				// obtain times
 				double expectedPickupTime = Double.NaN;
 				double expectedDropoffTime = Double.NaN;
 
@@ -450,38 +447,48 @@ public class AlonsoMoraAlgorithm {
 
 						if (stop.getType().equals(StopType.Pickup)) {
 							// We're looking at the pickup stop
-
 							expectedPickupTime = stop.getTime();
-
-							if (settings.usePlannedPickupTime) {
-								// We have a waiting time slack, i.e. we move the pickup constraint to the
-								// promised value from the assignment plus a small slack, which, by default, is
-								// zero. So in the usual case, we require that the request be picked up at the
-								// time that we promise at the first assignment.
-
-								// ... but adding the slack cannot exceed the initial pickup requirement
-								double plannedPickupTime = expectedPickupTime + settings.plannedPickupTimeSlack;
-								plannedPickupTime = Math.min(plannedPickupTime, request.getLatestPickupTime());
-
-								request.setPlannedPickupTime(plannedPickupTime);
-							}
-
-							if (request.isAssigned() && !request.getVehicle().equals(trip.getVehicle())) {
-								// Just for statistics: We track whether a request is assigned to a new vehicle
-								information.numberOfReassignments++;
-							}
 						} else if (stop.getType().equals(StopType.Dropoff)) {
 							// We're looking at the dropoff stop
 							expectedDropoffTime = stop.getTime();
 						}
 					}
 				}
+
+				Verify.verify(Double.isFinite(expectedPickupTime));
+				Verify.verify(Double.isFinite(expectedDropoffTime));
 				
-				/* For each DRT request, we create a scheduling event */
-				for (AcceptedDrtRequest drtRequest : request.getAcceptedDrtRequests()) {
-					eventsManager.processEvent(new PassengerRequestScheduledEvent(now, mode, drtRequest.getId(),
-							drtRequest.getPassengerId(), trip.getVehicle().getVehicle().getId(), expectedPickupTime,
-							expectedDropoffTime));
+				// check if request has already been accepted
+				Optional<AcceptedDrtRequest> acceptedRequest = Optional.ofNullable(request.getAcceptedDrtRequest());
+
+				if (acceptedRequest.isEmpty()) {
+					// first need to check if user accepts the offer
+					
+					acceptedRequest = offerAcceptor.acceptDrtOffer(request.getDrtRequest(),
+							expectedPickupTime, expectedDropoffTime);
+					
+					if (acceptedRequest.isPresent()) {
+						request.accept(acceptedRequest.get());
+					}
+				}
+
+				// now proceed with the request, otherwise it is rejected
+				if (acceptedRequest.isPresent()) {
+					Verify.verify(newAssignedRequests.add(request), "Request is assigned twice!");
+					
+					// Set the vehicle
+					request.setVehicle(trip.getVehicle());
+
+					// publish scheduling event
+					eventsManager.processEvent(new PassengerRequestScheduledEvent(now, mode,
+							request.getDrtRequest().getId(), request.getDrtRequest().getPassengerIds(),
+							trip.getVehicle().getVehicle().getId(), expectedPickupTime, expectedDropoffTime));
+
+					// statistics
+					if (request.isAssigned() && !request.getVehicle().equals(trip.getVehicle())) {
+						// Just for statistics: We track whether a request is assigned to a new vehicle
+						information.numberOfReassignments++;
+					}
 				}
 			}
 		}
@@ -628,14 +635,14 @@ public class AlonsoMoraAlgorithm {
 
 			information.numberOfRelocations++;
 		}
-		
+
 		if (settings.useStepwiseRelocation) {
 			List<AlonsoMoraVehicle> stopVehicles = new ArrayList<>(relocatableVehicles);
 			relocations.forEach(r -> stopVehicles.remove(r.vehicle));
-			
+
 			for (AlonsoMoraVehicle vehicle : stopVehicles) {
-				vehicle.setRoute(
-						Collections.singletonList(new AlonsoMoraStop(StopType.Relocation, vehicle.getNextDiversion(now).link, null)));
+				vehicle.setRoute(Collections.singletonList(
+						new AlonsoMoraStop(StopType.Relocation, vehicle.getNextDiversion(now).link, null)));
 				scheduler.schedule(vehicle, now);
 			}
 		}
@@ -740,8 +747,6 @@ public class AlonsoMoraAlgorithm {
 		final boolean useBindingRelocations;
 		final boolean useStepwiseRelocation;
 		final boolean preserveVehicleAssignments;
-		final boolean usePlannedPickupTime;
-		final double plannedPickupTimeSlack;
 		final double relocationInterval;
 		final boolean allowBareReassignment;
 		final double loggingInterval;
@@ -750,18 +755,15 @@ public class AlonsoMoraAlgorithm {
 		final int tripGraphlimitPerSequenceLength;
 
 		public AlgorithmSettings(AlonsoMoraConfigGroup config) {
-			this.useBindingRelocations = config.getUseBindingRelocations();
-			this.useStepwiseRelocation = config.getUseStepwiseRelocation();
-			this.preserveVehicleAssignments = config.getCongestionMitigationParameters()
-					.getPreserveVehicleAssignments();
-			this.usePlannedPickupTime = config.getUsePlannedPickupTime();
-			this.plannedPickupTimeSlack = config.getPlannedPickupTimeSlack();
-			this.relocationInterval = config.getRelocationInterval();
-			this.allowBareReassignment = config.getCongestionMitigationParameters().getAllowBareReassignment();
-			this.loggingInterval = config.getLoggingInterval();
-			this.candidateVehiclesPerRequest = config.getCandidateVehiclesPerRequest();
-			this.tripGraphLimitPerVehicle = config.getTripGraphLimitPerVehicle();
-			this.tripGraphlimitPerSequenceLength = config.getTripGraphLimitPerSequenceLength();
+			this.useBindingRelocations = config.useBindingRelocations;
+			this.useStepwiseRelocation = config.useStepwiseRelocation;
+			this.preserveVehicleAssignments = config.congestionMitigation.preserveVehicleAssignments;
+			this.relocationInterval = config.relocationInterval;
+			this.allowBareReassignment = config.congestionMitigation.allowBareReassignment;
+			this.loggingInterval = config.loggingInterval;
+			this.candidateVehiclesPerRequest = config.candidateVehiclesPerRequest;
+			this.tripGraphLimitPerVehicle = config.tripGraphLimitPerVehicle;
+			this.tripGraphlimitPerSequenceLength = config.tripGraphLimitPerSequenceLength;
 		}
 	}
 

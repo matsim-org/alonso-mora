@@ -35,15 +35,13 @@ public class GurobiModule extends AbstractDvrpModeQSimModule {
 		bindModal(GurobiAssignmentSolver.class).toProvider(modalProvider(getter -> {
 			GlobalConfigGroup globalConfig = getter.get(GlobalConfigGroup.class);
 
-			GurobiAssignmentParameters solverParameters = (GurobiAssignmentParameters) amConfig
-					.getAssignmentSolverParameters();
+			GurobiAssignmentParameters solverParameters = (GurobiAssignmentParameters) amConfig.assignmentSolver;
 
-			return new GurobiAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					globalConfig.getNumberOfThreads(), solverParameters.getTimeLimit(),
-					solverParameters.getOptimalityGap());
+			return new GurobiAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
+					globalConfig.getNumberOfThreads(), solverParameters.timeLimit, solverParameters.optimalityGap);
 		})).in(Singleton.class);
 
-		if (amConfig.getAssignmentSolverParameters().getSolverType().equals(GurobiAssignmentSolver.TYPE)) {
+		if (amConfig.assignmentSolver.getSolverType().equals(GurobiAssignmentSolver.TYPE)) {
 			bindModal(AssignmentSolver.class).to(modalKey(GurobiAssignmentSolver.class));
 		}
 
@@ -53,7 +51,7 @@ public class GurobiModule extends AbstractDvrpModeQSimModule {
 			return new GurobiRelocationSolver(globalConfig.getNumberOfThreads());
 		})).in(Singleton.class);
 
-		if (amConfig.getRelocationSolverParameters().getSolverType().equals(GurobiRelocationSolver.TYPE)) {
+		if (amConfig.relocationSolver.getSolverType().equals(GurobiRelocationSolver.TYPE)) {
 			bindModal(RelocationSolver.class).to(modalKey(GurobiRelocationSolver.class));
 		}
 	}

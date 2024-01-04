@@ -35,15 +35,13 @@ public class CplexModule extends AbstractDvrpModeQSimModule {
 		bindModal(CplexAssignmentSolver.class).toProvider(modalProvider(getter -> {
 			GlobalConfigGroup globalConfig = getter.get(GlobalConfigGroup.class);
 
-			CplexAssignmentParameters solverParameters = (CplexAssignmentParameters) amConfig
-					.getAssignmentSolverParameters();
+			CplexAssignmentParameters solverParameters = (CplexAssignmentParameters) amConfig.assignmentSolver;
 
-			return new CplexAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					globalConfig.getNumberOfThreads(), solverParameters.getTimeLimit(),
-					solverParameters.getOptimalityGap());
+			return new CplexAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
+					globalConfig.getNumberOfThreads(), solverParameters.timeLimit, solverParameters.optimalityGap);
 		})).in(Singleton.class);
 
-		if (amConfig.getAssignmentSolverParameters().getSolverType().equals(CplexAssignmentSolver.TYPE)) {
+		if (amConfig.assignmentSolver.getSolverType().equals(CplexAssignmentSolver.TYPE)) {
 			bindModal(AssignmentSolver.class).to(modalKey(CplexAssignmentSolver.class));
 		}
 
@@ -53,7 +51,7 @@ public class CplexModule extends AbstractDvrpModeQSimModule {
 			return new CplexRelocationSolver(globalConfig.getNumberOfThreads());
 		})).in(Singleton.class);
 
-		if (amConfig.getRelocationSolverParameters().getSolverType().equals(CplexRelocationSolver.TYPE)) {
+		if (amConfig.relocationSolver.getSolverType().equals(CplexRelocationSolver.TYPE)) {
 			bindModal(RelocationSolver.class).to(modalKey(CplexRelocationSolver.class));
 		}
 	}

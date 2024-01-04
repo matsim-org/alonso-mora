@@ -1,7 +1,5 @@
 package org.matsim.alonso_mora.algorithm;
 
-import java.util.stream.Collectors;
-
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.core.utils.misc.Time;
 
@@ -56,7 +54,6 @@ public class AlonsoMoraStop {
 	@Override
 	public String toString() {
 		return String.format("Stop[%s,%s@%s,(%s)]", stopType.toString(), Time.writeTime(time), link.getId().toString(),
-				request != null ? request.getDrtRequests().stream().map(r -> r.getId().toString())
-						.collect(Collectors.joining(",")) : "");
+				request != null ? request.getDrtRequest().getId().toString() : "");
 	}
 }

@@ -16,7 +16,8 @@ import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
-import org.matsim.contrib.drt.schedule.StopDurationEstimator;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
+import org.matsim.contrib.drt.stops.StopTimeCalculator;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater.StayTaskEndTimeCalculator;
@@ -44,7 +45,7 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 		// TODO: This can become a general binding in DRT
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
 			return new ShiftDrtStayTaskEndTimeCalculator(shiftConfig,
-					new DrtStayTaskEndTimeCalculator(getter.getModal(StopDurationEstimator.class)));
+					new DrtStayTaskEndTimeCalculator(getter.getModal(StopTimeCalculator.class)));
 		}));
 
 		bindModal(OperationalVoter.class).toProvider(modalProvider(getter -> {
@@ -71,10 +72,11 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 			Network network = getter.getModal(Network.class);
 
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
-
-			return new ShiftAlonsoMoraScheduler(taskFactory, drtConfig.stopDuration,
-					amConfig.getCheckDeterminsticTravelTimes(), amConfig.getRerouteDuringScheduling(), travelTime,
-					network, endTimeCalculator, router, operationalVoter);
+			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
+			
+			return new ShiftAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.stopDuration,
+					amConfig.checkDeterminsticTravelTimes, amConfig.rerouteDuringScheduling, travelTime, network,
+					endTimeCalculator, router, operationalVoter);
 		}));
 	}
 }

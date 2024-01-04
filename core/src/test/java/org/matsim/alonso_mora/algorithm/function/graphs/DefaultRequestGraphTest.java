@@ -1,11 +1,14 @@
 package org.matsim.alonso_mora.algorithm.function.graphs;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction;
@@ -29,19 +32,19 @@ public class DefaultRequestGraphTest {
 
 		graph.addRequest(request1, 0.0);
 
-		Assert.assertEquals(0, graph.getShareableRequests(request1).size());
-		Assert.assertEquals(0, graph.getShareableRequests(request2).size());
+		assertEquals(0, graph.getShareableRequests(request1).size());
+		assertEquals(0, graph.getShareableRequests(request2).size());
 
 		graph.addRequest(request2, 0.0);
 
-		Assert.assertEquals(1, graph.getShareableRequests(request1).size());
-		Assert.assertEquals(1, graph.getShareableRequests(request2).size());
+		assertEquals(1, graph.getShareableRequests(request1).size());
+		assertEquals(1, graph.getShareableRequests(request2).size());
 
-		Assert.assertTrue(graph.getShareableRequests(request1).contains(request2));
-		Assert.assertTrue(graph.getShareableRequests(request2).contains(request1));
+		assertTrue(graph.getShareableRequests(request1).contains(request2));
+		assertTrue(graph.getShareableRequests(request2).contains(request1));
 	}
 
-	@Test(expected = VerifyException.class)
+	@Test
 	public void testAddTwice() {
 		MockRequest request1 = new MockRequest(1);
 
@@ -49,7 +52,10 @@ public class DefaultRequestGraphTest {
 		RequestGraph graph = new DefaultRequestGraph(function, new ForkJoinPool(1));
 
 		graph.addRequest(request1, 0.0);
-		graph.addRequest(request1, 0.0);
+
+		Assertions.assertThrows(VerifyException.class, () -> {
+			graph.addRequest(request1, 0.0);
+		});
 	}
 
 	@Test
@@ -69,14 +75,14 @@ public class DefaultRequestGraphTest {
 		graph.addRequest(request7, 0.0);
 		graph.addRequest(request8, 0.0);
 
-		Assert.assertEquals(2, graph.getShareableRequests(request1).size());
-		Assert.assertEquals(1, graph.getShareableRequests(request7).size());
-		Assert.assertEquals(1, graph.getShareableRequests(request8).size());
+		assertEquals(2, graph.getShareableRequests(request1).size());
+		assertEquals(1, graph.getShareableRequests(request7).size());
+		assertEquals(1, graph.getShareableRequests(request8).size());
 
-		Assert.assertTrue(graph.getShareableRequests(request1).contains(request7));
-		Assert.assertTrue(graph.getShareableRequests(request1).contains(request8));
-		Assert.assertTrue(graph.getShareableRequests(request7).contains(request1));
-		Assert.assertTrue(graph.getShareableRequests(request8).contains(request1));
+		assertTrue(graph.getShareableRequests(request1).contains(request7));
+		assertTrue(graph.getShareableRequests(request1).contains(request8));
+		assertTrue(graph.getShareableRequests(request7).contains(request1));
+		assertTrue(graph.getShareableRequests(request8).contains(request1));
 	}
 
 	private static class MockRequest implements AlonsoMoraRequest {
@@ -150,13 +156,13 @@ public class DefaultRequestGraphTest {
 		}
 
 		@Override
-		public Collection<DrtRequest> getDrtRequests() {
+		public DrtRequest getDrtRequest() {
 			// TODO Auto-generated method stub
 			return null;
 		}
-		
+
 		@Override
-		public Collection<AcceptedDrtRequest> getAcceptedDrtRequests() {
+		public AcceptedDrtRequest getAcceptedDrtRequest() {
 			// TODO Auto-generated method stub
 			return null;
 		}
@@ -219,6 +225,12 @@ public class DefaultRequestGraphTest {
 		public double getEarliestPickupTime() {
 			// TODO Auto-generated method stub
 			return 0;
+		}
+
+		@Override
+		public void accept(AcceptedDrtRequest acceptedRequest) {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 

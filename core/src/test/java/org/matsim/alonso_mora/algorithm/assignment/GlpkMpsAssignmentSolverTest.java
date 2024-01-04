@@ -1,16 +1,17 @@
 package org.matsim.alonso_mora.algorithm.assignment;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
@@ -18,12 +19,9 @@ import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction.Result;
 import org.mockito.Mockito;
 
 public class GlpkMpsAssignmentSolverTest {
-	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-	@Before
-	public void checkSolver() {
-		Assume.assumeTrue("Checking for availability of GLPK solver", GlpkMpsAssignmentSolver.checkAvailability());
+	@BeforeAll
+	static public void checkSolver() {
+		assertTrue(GlpkMpsAssignmentSolver.checkAvailability(), "Checking for availability of GLPK solver");
 	}
 
 	private AlonsoMoraRequest mockRequest() {
@@ -48,9 +46,12 @@ public class GlpkMpsAssignmentSolverTest {
 	}
 
 	@Test
-	public void testOneVehicleOneRequestExample() throws IOException {
+	public void testOneVehicleOneRequestExample(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+		
 		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -59,14 +60,17 @@ public class GlpkMpsAssignmentSolverTest {
 		List<AlonsoMoraTrip> candidates = Arrays.asList(trip);
 		Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-		Assert.assertEquals(1, selection.size());
-		Assert.assertTrue(selection.contains(trip));
+		assertEquals(1, selection.size());
+		assertTrue(selection.contains(trip));
 	}
 
 	@Test
-	public void testTwoIndependentRequests() throws IOException {
+	public void testTwoIndependentRequests(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+		
 		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -79,15 +83,18 @@ public class GlpkMpsAssignmentSolverTest {
 		List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2);
 		Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-		Assert.assertEquals(2, selection.size());
-		Assert.assertTrue(selection.contains(trip1));
-		Assert.assertTrue(selection.contains(trip2));
+		assertEquals(2, selection.size());
+		assertTrue(selection.contains(trip1));
+		assertTrue(selection.contains(trip2));
 	}
 
 	@Test
-	public void testTwoRequestsWithOneVehicle() throws IOException {
+	public void testTwoRequestsWithOneVehicle(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+		
 		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -104,15 +111,18 @@ public class GlpkMpsAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip3));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip3));
 		}
 	}
 
 	@Test
-	public void testTwoRequestsWithOneVehicleLowPenalty() throws IOException {
+	public void testTwoRequestsWithOneVehicleLowPenalty(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+		
 		AssignmentSolver solver = new GlpkMpsAssignmentSolver(250.0, 250.0, 1000, 0.1,
-				temporaryFolder.newFile("problem"), temporaryFolder.newFile("solution"));
+				problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -128,8 +138,8 @@ public class GlpkMpsAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip1));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip1));
 		}
 	}
 }

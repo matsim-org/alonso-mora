@@ -1,17 +1,12 @@
 package org.matsim.alonso_mora.algorithm;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
 import org.matsim.contrib.dvrp.schedule.Task.TaskStatus;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 
 /**
@@ -26,8 +21,8 @@ import com.google.common.base.Verify;
  * @author sebhoerl
  */
 public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
-	private final List<DrtRequest> drtRequests;
-	private List<AcceptedDrtRequest> acceptedDrtRequests;
+	private final DrtRequest drtRequest;
+	private AcceptedDrtRequest acceptedDrtRequest;
 
 	private DrtStopTask pickupTask;
 	private DrtStopTask dropoffTask;
@@ -49,41 +44,22 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 
 	private final double directRideDistance;
 
-	public DefaultAlonsoMoraRequest(Collection<DrtRequest> drtRequests, double latestAssignmentTime,
-			double directArrivalTime, double directRideDistance) {
+	public DefaultAlonsoMoraRequest(DrtRequest drtRequest, double latestAssignmentTime, double directArrivalTime,
+			double directRideDistance) {
 		this.directArrivalTime = directArrivalTime;
 		this.directRideDistance = directRideDistance;
+		this.drtRequest = drtRequest;
+		this.cachedHashCode = drtRequest.getId().index();
 
-		this.drtRequests = new ArrayList<>(drtRequests);
-		Collections.sort(this.drtRequests, (a, b) -> Integer.compare(a.getId().index(), b.getId().index()));
+		this.pickupLink = this.drtRequest.getFromLink();
+		this.dropoffLink = this.drtRequest.getToLink();
 
-		{
-			/*
-			 * We need a unique has code for the aggregated requests.
-			 */
-			int hashCode = 13;
+		this.latestPickupTime = this.drtRequest.getLatestStartTime();
+		this.latestDropoffTime = this.drtRequest.getLatestArrivalTime();
+		this.earliestPickupTime = this.drtRequest.getEarliestStartTime();
 
-			for (int i = 0; i < this.drtRequests.size(); i++) {
-				DrtRequest drtRquest = this.drtRequests.get(i);
-				hashCode += 27 * (i + 1) * drtRquest.getId().index();
-			}
-
-			this.cachedHashCode = hashCode;
-		}
-
-		this.pickupLink = this.drtRequests.get(0).getFromLink();
-		this.dropoffLink = this.drtRequests.get(0).getToLink();
-
-		this.latestPickupTime = this.drtRequests.stream().mapToDouble(r -> r.getLatestStartTime()).min().getAsDouble();
-		this.latestDropoffTime = this.drtRequests.stream().mapToDouble(r -> r.getLatestArrivalTime()).min()
-				.getAsDouble();
-		this.earliestPickupTime = this.drtRequests.stream().mapToDouble(r -> r.getEarliestStartTime()).max()
-				.getAsDouble();
-
-		for (DrtRequest request : this.drtRequests) {
-			Verify.verify(this.pickupLink.equals(request.getFromLink()));
-			Verify.verify(this.dropoffLink.equals(request.getToLink()));
-		}
+		Verify.verify(this.pickupLink.equals(drtRequest.getFromLink()));
+		Verify.verify(this.dropoffLink.equals(drtRequest.getToLink()));
 
 		this.latestAssignmentTime = Math.min(getLatestPickupTime(), latestAssignmentTime);
 	}
@@ -97,18 +73,7 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 				return sizeComparison;
 			}
 
-			DefaultAlonsoMoraRequest otherDefaultRequest = (DefaultAlonsoMoraRequest) otherRequest;
-
-			for (int i = 0; i < getSize(); i++) {
-				int indexComparison = Integer.compare(drtRequests.get(i).getId().index(),
-						otherDefaultRequest.drtRequests.get(i).getId().index());
-
-				if (indexComparison != 0) {
-					return indexComparison;
-				}
-			}
-
-			return 0;
+			return Integer.compare(drtRequest.getId().index(), otherRequest.getDrtRequest().getId().index());
 		}
 
 		throw new IllegalStateException();
@@ -168,19 +133,14 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 		return latestAssignmentTime;
 	}
 
-	public Collection<DrtRequest> getDrtRequests() {
-		return drtRequests;
+	public DrtRequest getDrtRequest() {
+		return drtRequest;
 	}
-	
-	public Collection<AcceptedDrtRequest> getAcceptedDrtRequests() {
-		if (acceptedDrtRequests == null) {
-			acceptedDrtRequests = drtRequests.stream().map(AcceptedDrtRequest::createFromOriginalRequest)
-					.collect(Collectors.toList());
-		}
-		
-		return acceptedDrtRequests;
+
+	public AcceptedDrtRequest getAcceptedDrtRequest() {
+		return acceptedDrtRequest;
 	}
-	
+
 	@Override
 	public void setVehicle(AlonsoMoraVehicle vehicle) {
 		this.vehicle = vehicle;
@@ -208,7 +168,7 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 
 	@Override
 	public int getSize() {
-		return drtRequests.size();
+		return drtRequest.getPassengerCount();
 	}
 
 	@Override
@@ -245,17 +205,6 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 		}
 	}
 
-	/**
-	 * Sets the planned pickup time. This only happens once on the first assignment,
-	 * afterwards the pickup time has been promised and can not be changed again.
-	 */
-	@Override
-	public void setPlannedPickupTime(double plannedPickupTime) {
-		if (Double.isNaN(this.plannedPickupTime)) {
-			this.plannedPickupTime = plannedPickupTime;
-		}
-	}
-
 	@Override
 	public double getDirectRideDistance() {
 		return directRideDistance;
@@ -268,6 +217,18 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 
 	@Override
 	public String toString() {
-		return "{" + drtRequests.stream().map(r -> r.getId().toString()).collect(Collectors.joining(",")) + "}";
+		return drtRequest.toString();
+	}
+
+	@Override
+	public void accept(AcceptedDrtRequest acceptedRequest) {
+		Preconditions.checkArgument(this.acceptedDrtRequest == null);
+		this.acceptedDrtRequest = acceptedRequest;
+		this.plannedPickupTime = acceptedRequest.getLatestStartTime();
+	}
+
+	@Override
+	public void setPlannedPickupTime(double plannedPickupTime) {
+		throw new IllegalStateException();
 	}
 }

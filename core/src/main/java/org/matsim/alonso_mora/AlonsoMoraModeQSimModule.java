@@ -38,6 +38,7 @@ import org.matsim.alonso_mora.algorithm.function.sequence.SequenceGeneratorFacto
 import org.matsim.alonso_mora.algorithm.relocation.BestResponseRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.CbcMpsRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.GlpkMpsRelocationSolver;
+import org.matsim.alonso_mora.algorithm.relocation.NoopRelocationSolver;
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver;
 import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
 import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler;
@@ -56,12 +57,15 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.optimizer.QSimScopeForkJoinPoolHolder;
 import org.matsim.contrib.drt.optimizer.rebalancing.RebalancingStrategy;
+import org.matsim.contrib.drt.passenger.DrtOfferAcceptor;
+import org.matsim.contrib.drt.prebooking.unscheduler.RequestUnscheduler;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtStayTaskEndTimeCalculator;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
-import org.matsim.contrib.drt.schedule.StopDurationEstimator;
 import org.matsim.contrib.drt.scheduler.DrtScheduleInquiry;
 import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
+import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
+import org.matsim.contrib.drt.stops.StopTimeCalculator;
 import org.matsim.contrib.dvrp.fleet.Fleet;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
@@ -96,9 +100,9 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 	@Override
 	protected void configureQSim() {
 		bindModal(SequenceGeneratorFactory.class).toProvider(modalProvider(getter -> {
-			switch (amConfig.getSequenceGeneratorType()) {
+			switch (amConfig.sequenceGeneratorType) {
 			case Combined:
-				return new CombinedSequenceGenerator.Factory(amConfig.getInsertionStartOccupancy());
+				return new CombinedSequenceGenerator.Factory(amConfig.insertionStartOccupancy);
 			case EuclideanBestResponse:
 				return new EuclideanSequenceGenerator.Factory();
 			case Extensive:
@@ -127,11 +131,10 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			File problemPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.mps");
 			File solutionPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.sol");
 
-			CbcMpsAssignmentParameters solverParameters = (CbcMpsAssignmentParameters) amConfig
-					.getAssignmentSolverParameters();
+			CbcMpsAssignmentParameters solverParameters = (CbcMpsAssignmentParameters) amConfig.assignmentSolver;
 
-			return new CbcMpsAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath, solutionPath,
+			return new CbcMpsAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
+					solverParameters.timeLimit, solverParameters.optimalityGap, problemPath, solutionPath,
 					getConfig().global().getRandomSeed());
 		})).in(Singleton.class);
 
@@ -144,14 +147,13 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			File problemPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.mps");
 			File solutionPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.sol");
 
-			GlpkMpsAssignmentParameters solverParameters = (GlpkMpsAssignmentParameters) amConfig
-					.getAssignmentSolverParameters();
+			GlpkMpsAssignmentParameters solverParameters = (GlpkMpsAssignmentParameters) amConfig.assignmentSolver;
 
-			return new GlpkMpsAssignmentSolver(amConfig.getUnassignmentPenalty(), amConfig.getRejectionPenalty(),
-					solverParameters.getTimeLimit(), solverParameters.getOptimalityGap(), problemPath, solutionPath);
+			return new GlpkMpsAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
+					solverParameters.timeLimit, solverParameters.optimalityGap, problemPath, solutionPath);
 		})).in(Singleton.class);
 
-		switch (amConfig.getAssignmentSolverParameters().getSolverType()) {
+		switch (amConfig.assignmentSolver.getSolverType()) {
 		case GreedyTripFirstSolver.TYPE:
 			bindModal(AssignmentSolver.class).to(modalKey(GreedyTripFirstSolver.class));
 			break;
@@ -166,6 +168,10 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			break;
 		}
 
+		bindModal(NoopRelocationSolver.class).toProvider(modalProvider(getter -> {
+			return new NoopRelocationSolver();
+		})).in(Singleton.class);
+
 		bindModal(BestResponseRelocationSolver.class).toProvider(modalProvider(getter -> {
 			return new BestResponseRelocationSolver();
 		})).in(Singleton.class);
@@ -179,10 +185,9 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			File problemPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.mps");
 			File solutionPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.sol");
 
-			CbcMpsRelocationParameters solverParameters = (CbcMpsRelocationParameters) amConfig
-					.getRelocationSolverParameters();
+			CbcMpsRelocationParameters solverParameters = (CbcMpsRelocationParameters) amConfig.relocationSolver;
 
-			return new CbcMpsRelocationSolver(solverParameters.getRuntimeThreshold(), problemPath, solutionPath,
+			return new CbcMpsRelocationSolver(solverParameters.runtimeThreshold, problemPath, solutionPath,
 					getConfig().global().getRandomSeed());
 		})).in(Singleton.class);
 
@@ -195,22 +200,25 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			File problemPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.mps");
 			File solutionPath = new File(outputHierarchy.getTempPath(), "alonso_mora_assignment.sol");
 
-			GlpkMpsRelocationParameters solverParameters = (GlpkMpsRelocationParameters) amConfig
-					.getRelocationSolverParameters();
+			GlpkMpsRelocationParameters solverParameters = (GlpkMpsRelocationParameters) amConfig.relocationSolver;
 
-			return new GlpkMpsRelocationSolver(solverParameters.getRuntimeThreshold(), problemPath, solutionPath);
+			return new GlpkMpsRelocationSolver(solverParameters.runtimeThreshold, problemPath, solutionPath);
 		})).in(Singleton.class);
 
-		switch (amConfig.getRelocationSolverParameters().getSolverType()) {
-		case BestResponseRelocationSolver.TYPE:
-			bindModal(RelocationSolver.class).to(modalKey(BestResponseRelocationSolver.class));
-			break;
-		case CbcMpsRelocationSolver.TYPE:
-			bindModal(RelocationSolver.class).to(modalKey(CbcMpsRelocationSolver.class));
-			break;
-		case GlpkMpsRelocationSolver.TYPE:
-			bindModal(RelocationSolver.class).to(modalKey(GlpkMpsRelocationSolver.class));
-			break;
+		if (amConfig.relocationSolver != null) {
+			switch (amConfig.relocationSolver.getSolverType()) {
+			case BestResponseRelocationSolver.TYPE:
+				bindModal(RelocationSolver.class).to(modalKey(BestResponseRelocationSolver.class));
+				break;
+			case CbcMpsRelocationSolver.TYPE:
+				bindModal(RelocationSolver.class).to(modalKey(CbcMpsRelocationSolver.class));
+				break;
+			case GlpkMpsRelocationSolver.TYPE:
+				bindModal(RelocationSolver.class).to(modalKey(GlpkMpsRelocationSolver.class));
+				break;
+			}
+		} else {
+			bindModal(RelocationSolver.class).to(modalKey(NoopRelocationSolver.class));
 		}
 
 		bindModal(LeastCostPathCalculatorFactory.class).to(LeastCostPathCalculatorFactory.class);
@@ -244,36 +252,33 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		})).in(Singleton.class);
 
 		bindModal(EuclideanTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
-			EuclideanEstimatorParameters parameters = (EuclideanEstimatorParameters) amConfig
-					.getTravelTimeEstimatorParameters();
+			EuclideanEstimatorParameters parameters = (EuclideanEstimatorParameters) amConfig.travelTimeEstimator;
 
-			return new EuclideanTravelTimeEstimator(parameters.getEuclideanDistanceFactor(),
-					parameters.getEuclideanSpeed() / 3.6);
+			return new EuclideanTravelTimeEstimator(parameters.euclideanDistanceFactor,
+					parameters.euclideanSpeed / 3.6);
 		})).in(Singleton.class);
 
 		bindModal(RoutingTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
-			RoutingEstimatorParameters parameters = (RoutingEstimatorParameters) amConfig
-					.getTravelTimeEstimatorParameters();
+			RoutingEstimatorParameters parameters = (RoutingEstimatorParameters) amConfig.travelTimeEstimator;
 
 			LeastCostPathCalculator router = getter.getModal(LeastCostPathCalculator.class);
 			TravelTime travelTime = getter.getModal(TravelTime.class);
 			MobsimTimer mobsimTimer = getter.get(MobsimTimer.class);
 
-			return new RoutingTravelTimeEstimator(mobsimTimer, router, travelTime, parameters.getCacheLifetime());
+			return new RoutingTravelTimeEstimator(mobsimTimer, router, travelTime, parameters.cacheLifetime);
 		})).in(Singleton.class);
 
 		bindModal(HybridTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
-			HybridEstimatorParameters parameters = (HybridEstimatorParameters) amConfig
-					.getTravelTimeEstimatorParameters();
+			HybridEstimatorParameters parameters = (HybridEstimatorParameters) amConfig.travelTimeEstimator;
 
 			LeastCostPathCalculator router = getter.getModal(LeastCostPathCalculator.class);
 			TravelTime travelTime = getter.getModal(TravelTime.class);
 			MobsimTimer mobsimTimer = getter.get(MobsimTimer.class);
 
 			return new HybridTravelTimeEstimator(
-					new RoutingTravelTimeEstimator(mobsimTimer, router, travelTime, parameters.getCacheLifetime()),
-					new EuclideanTravelTimeEstimator(parameters.getEuclideanDistanceFactor(),
-							parameters.getEuclideanSpeed() / 3.6));
+					new RoutingTravelTimeEstimator(mobsimTimer, router, travelTime, parameters.cacheLifetime),
+					new EuclideanTravelTimeEstimator(parameters.euclideanDistanceFactor,
+							parameters.euclideanSpeed / 3.6));
 		})).in(Singleton.class);
 
 		bindModal(MatrixTravelTimeEstimator.class).toProvider(modalProvider(getter -> {
@@ -292,7 +297,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			return LazyMatrixTravelTimeEstimator.create(network, travelTime, new DijkstraFactory(), 8.5 * 3600.0);
 		})).in(Singleton.class);
 
-		switch (amConfig.getTravelTimeEstimatorParameters().getEstimatorType()) {
+		switch (amConfig.travelTimeEstimator.getEstimatorType()) {
 		case DrtDetourTravelTimeEstimator.TYPE:
 			bindModal(TravelTimeEstimator.class).to(modalKey(DrtDetourTravelTimeEstimator.class));
 			break;
@@ -303,10 +308,9 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			bindModal(TravelTimeEstimator.class).to(modalKey(HybridTravelTimeEstimator.class));
 			break;
 		case MatrixTravelTimeEstimator.TYPE:
-			MatrixEstimatorParameters estimatorParameters = (MatrixEstimatorParameters) amConfig
-					.getTravelTimeEstimatorParameters();
+			MatrixEstimatorParameters estimatorParameters = (MatrixEstimatorParameters) amConfig.travelTimeEstimator;
 			bindModal(TravelTimeEstimator.class)
-					.to(estimatorParameters.isLazy() ? modalKey(LazyMatrixTravelTimeEstimator.class)
+					.to(estimatorParameters.lazy ? modalKey(LazyMatrixTravelTimeEstimator.class)
 							: modalKey(MatrixTravelTimeEstimator.class));
 			break;
 		case RoutingTravelTimeEstimator.TYPE:
@@ -319,21 +323,22 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			SequenceGeneratorFactory sequenceGeneratorFactory = getter.getModal(SequenceGeneratorFactory.class);
 			Objective objective = getter.getModal(Objective.class);
 			Constraint constraint = getter.getModal(Constraint.class);
+			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
 
-			CongestionMitigationParameters congestionParameters = amConfig.getCongestionMitigationParameters();
+			CongestionMitigationParameters congestionParameters = amConfig.congestionMitigation;
 
-			return new DefaultAlonsoMoraFunction(travelTimeEstimator, sequenceGeneratorFactory,
-					drtConfig.stopDuration, congestionParameters.getAllowPickupViolations(),
-					congestionParameters.getAllowPickupsWithDropoffViolations(),
-					amConfig.getCheckDeterminsticTravelTimes(), objective, constraint, amConfig.getViolationFactor(),
-					amConfig.getViolationOffset(), amConfig.getPreferNonViolation());
+			return new DefaultAlonsoMoraFunction(travelTimeEstimator, sequenceGeneratorFactory, stopDurationProvider,
+					drtConfig.stopDuration, congestionParameters.allowPickupViolations,
+					congestionParameters.allowPickupsWithDropoffViolations, amConfig.checkDeterminsticTravelTimes,
+					objective, constraint, amConfig.violationFactor, amConfig.violationOffset,
+					amConfig.preferNonViolation);
 		}));
 
 		bindModal(Objective.class).toProvider(() -> new MinimumDelay());
 		bindModal(Constraint.class).toInstance(new NoopConstraint());
 
 		bindModal(StayTaskEndTimeCalculator.class).toProvider(modalProvider(getter -> {
-			return new DrtStayTaskEndTimeCalculator(getter.getModal(StopDurationEstimator.class));
+			return new DrtStayTaskEndTimeCalculator(getter.getModal(StopTimeCalculator.class));
 		}));
 
 		bindModal(AlonsoMoraScheduler.class).toProvider(modalProvider(getter -> {
@@ -345,10 +350,11 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			Network network = getter.getModal(Network.class);
 
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
+			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
 
-			return new DefaultAlonsoMoraScheduler(taskFactory, drtConfig.stopDuration,
-					amConfig.getCheckDeterminsticTravelTimes(), amConfig.getRerouteDuringScheduling(), travelTime,
-					network, endTimeCalculator, router, operationalVoter);
+			return new DefaultAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.stopDuration,
+					amConfig.checkDeterminsticTravelTimes, amConfig.rerouteDuringScheduling, travelTime, network,
+					endTimeCalculator, router, operationalVoter);
 		}));
 
 		bindModal(OperationalVoter.class).toInstance(new NoopOperationalVoter());
@@ -373,7 +379,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 		bindModal(AlonsoMoraAlgorithm.class).toProvider(modalProvider(getter -> {
 			StandardRebalancer standardRebalancer = getter.getModal(StandardRebalancer.class);
 
-			if (amConfig.getRelocationInterval() > 0 && standardRebalancer.isActive()) {
+			if ((amConfig.relocationInterval > 0 && amConfig.relocationSolver != null)
+					&& standardRebalancer.isActive()) {
 				throw new IllegalStateException(
 						"If a DRT rebalancing strategy is defined, you have to set useInternalRebalancing=false for the Alonso Mora dispatcher.");
 			}
@@ -389,14 +396,16 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(AlonsoMoraVehicleFactory.class), //
 					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
 					getter.getModal(TravelTimeEstimator.class), //
-					drtConfig.stopDuration, //
-					new AlgorithmSettings(amConfig));
+					getter.getModal(PassengerStopDurationProvider.class), //
+					new AlgorithmSettings(amConfig), //
+					getter.getModal(DrtOfferAcceptor.class), //
+					drtConfig.stopDuration);
 		}));
 
 		bindModal(AlonsoMoraVehicleFactory.class).toInstance(vehicle -> new DefaultAlonsoMoraVehicle(vehicle));
 
 		bindModal(AlonsoMoraRequestFactory.class).toProvider(modalProvider(getter -> {
-			return new DefaultAlonsoMoraRequestFactory(amConfig.getMaximumQueueTime());
+			return new DefaultAlonsoMoraRequestFactory(amConfig.maximumQueueTime);
 		}));
 
 		bindModal(AlonsoMoraOptimizer.class).toProvider(modalProvider(getter -> {
@@ -404,17 +413,21 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(AlonsoMoraRequestFactory.class), //
 					getter.getModal(ScheduleTimingUpdater.class), //
 					getter.getModal(Fleet.class), //
-					amConfig.getAssignmentInterval(), //
-					amConfig.getMaximumGroupRequestSize(), //
+					amConfig.assignmentInterval, //
 					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
 					getter.getModal(LeastCostPathCalculator.class), //
 					getter.getModal(TravelTime.class), //
-					drtConfig.advanceRequestPlanningHorizon, //
 					getter.getModal(InformationCollector.class) //
 			);
 		}));
 
 		bindModal(AlonsoMoraConfigGroup.class).toInstance(amConfig);
 		addModalComponent(DrtOptimizer.class, modalKey(AlonsoMoraOptimizer.class));
+
+		bindModal(AlonsoMoraOfferAcceptor.class).toInstance(new AlonsoMoraOfferAcceptor());
+		bindModal(DrtOfferAcceptor.class).to(modalKey(AlonsoMoraOfferAcceptor.class));
+
+		bindModal(AlonsoMoraUnscheduler.class).toInstance(new AlonsoMoraUnscheduler());
+		bindModal(RequestUnscheduler.class).to(modalKey(AlonsoMoraUnscheduler.class));
 	}
 }

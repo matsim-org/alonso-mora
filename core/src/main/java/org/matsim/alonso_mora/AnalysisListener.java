@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -32,11 +31,9 @@ import org.matsim.alonso_mora.InformationCollector.ReassignmentInformation;
 import org.matsim.alonso_mora.InformationCollector.RebalancingInformation;
 import org.matsim.alonso_mora.InformationCollector.SolverInformation;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution.Status;
-import org.matsim.api.core.v01.Id;
 import org.matsim.contrib.common.timeprofile.TimeProfileCharts;
 import org.matsim.contrib.common.timeprofile.TimeProfileCharts.ChartType;
 import org.matsim.contrib.common.util.ChartSaveUtils;
-import org.matsim.contrib.dvrp.optimizer.Request;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.controler.events.IterationEndsEvent;
 import org.matsim.core.controler.listener.IterationEndsListener;
@@ -50,7 +47,6 @@ import com.google.common.collect.ImmutableMap;
  */
 class AnalysisListener implements IterationEndsListener {
 	private final InformationCollector information;
-	private final RequestAggregationHandler requestHandler;
 	private final OutputDirectoryHierarchy outputHierarchy;
 
 	private final List<Long> numberOfInvalidSolutions = new LinkedList<>();
@@ -58,11 +54,9 @@ class AnalysisListener implements IterationEndsListener {
 	private final List<Long> numberOfOptimalSolutions = new LinkedList<>();
 	private final List<Long> numberOfReassignments = new LinkedList<>();
 
-	public AnalysisListener(InformationCollector information, OutputDirectoryHierarchy outputHierarchy,
-			RequestAggregationHandler requestHandler) {
+	public AnalysisListener(InformationCollector information, OutputDirectoryHierarchy outputHierarchy) {
 		this.information = information;
 		this.outputHierarchy = outputHierarchy;
-		this.requestHandler = requestHandler;
 	}
 
 	@Override
@@ -363,24 +357,6 @@ class AnalysisListener implements IterationEndsListener {
 			stackedChart.getXYPlot().getRenderer().setSeriesPaint(Math.max(maximumRequests - 1, 1), Color.LIGHT_GRAY);
 			ChartSaveUtils.saveAsPNG(stackedChart,
 					outputHierarchy.getIterationFilename(event.getIteration(), "am_occupancy_requests"), 1500, 1000);
-		}
-
-		{
-			List<Set<Id<Request>>> requests = requestHandler.consolidate();
-
-			try {
-				File path = new File(
-						outputHierarchy.getIterationFilename(event.getIteration(), "am_group_requests.txt"));
-				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path)));
-
-				for (Set<Id<Request>> set : requests) {
-					writer.write(set.stream().map(String::valueOf).collect(Collectors.joining(",")) + "\n");
-				}
-
-				writer.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 }

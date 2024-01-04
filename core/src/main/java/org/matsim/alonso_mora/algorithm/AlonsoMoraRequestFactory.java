@@ -1,7 +1,5 @@
 package org.matsim.alonso_mora.algorithm;
 
-import java.util.Collection;
-
 import org.matsim.contrib.drt.passenger.DrtRequest;
 
 /**
@@ -11,6 +9,6 @@ import org.matsim.contrib.drt.passenger.DrtRequest;
  * @author sebhoerl
  */
 public interface AlonsoMoraRequestFactory {
-	AlonsoMoraRequest createRequest(Collection<DrtRequest> requests, double directArrvialTime, double earliestDepartureTime,
+	AlonsoMoraRequest createRequest(DrtRequest request, double directArrvialTime, double earliestDepartureTime,
 			double directRideDistance);
 }
