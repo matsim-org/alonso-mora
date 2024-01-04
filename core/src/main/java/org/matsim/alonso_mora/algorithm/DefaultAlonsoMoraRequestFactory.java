@@ -1,7 +1,5 @@
 package org.matsim.alonso_mora.algorithm;
 
-import java.util.Collection;
-
 import org.matsim.contrib.drt.passenger.DrtRequest;
 
 /**
@@ -19,13 +17,12 @@ public class DefaultAlonsoMoraRequestFactory implements AlonsoMoraRequestFactory
 	}
 
 	@Override
-	public AlonsoMoraRequest createRequest(Collection<DrtRequest> requests, double directArrvialTime, double earliestDepartureTime,
+	public AlonsoMoraRequest createRequest(DrtRequest request, double directArrvialTime, double earliestDepartureTime,
 			double directRideDistance) {
 		double latestAssignmentTime = earliestDepartureTime + maximumQueueTime;
-		double latestPickupTime = requests.stream().mapToDouble(r -> r.getLatestStartTime()).min()
-				.orElse(Double.POSITIVE_INFINITY);
+		double latestPickupTime = request.getLatestStartTime();
 		latestAssignmentTime = Math.min(latestAssignmentTime, latestPickupTime);
 
-		return new DefaultAlonsoMoraRequest(requests, latestAssignmentTime, directArrvialTime, directRideDistance);
+		return new DefaultAlonsoMoraRequest(request, latestAssignmentTime, directArrvialTime, directRideDistance);
 	}
 }

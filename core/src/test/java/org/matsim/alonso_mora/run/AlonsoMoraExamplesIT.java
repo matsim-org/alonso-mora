@@ -19,7 +19,7 @@
 
 package org.matsim.alonso_mora.run;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.net.URL;
@@ -32,9 +32,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import org.assertj.core.data.Percentage;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.AlonsoMoraConfigurator;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
@@ -42,7 +41,6 @@ import org.matsim.alonso_mora.shifts.ShiftAlonsoMoraModule;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
-import org.matsim.contrib.drt.extension.DrtWithExtensionsConfigGroup;
 import org.matsim.contrib.drt.extension.operations.DrtOperationsParams;
 import org.matsim.contrib.drt.extension.operations.DrtWithOperationsConfigGroup;
 import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesParams;
@@ -86,8 +84,8 @@ import org.matsim.vis.otfvis.OTFVisConfigGroup;
  */
 public class AlonsoMoraExamplesIT {
 
-	@Rule
-	public MatsimTestUtils utils = new MatsimTestUtils();
+	@RegisterExtension
+	private MatsimTestUtils utils = new MatsimTestUtils();
 
 	@Test
 	public void testRunAlonsoMora() {
@@ -137,7 +135,8 @@ public class AlonsoMoraExamplesIT {
 	public void testRunAlonsoMoraWithShifts() {
 		Id.resetCaches();
 		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
-		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(DrtWithOperationsConfigGroup::new), new DvrpConfigGroup(),
+		Config config = ConfigUtils.loadConfig(configUrl,
+				new MultiModeDrtConfigGroup(DrtWithOperationsConfigGroup::new), new DvrpConfigGroup(),
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
@@ -147,16 +146,17 @@ public class AlonsoMoraExamplesIT {
 		config.controller().setOutputDirectory(utils.getOutputDirectory());
 
 		// Remove DRT rebalancer as we want to use AM rebalancer
-		DrtWithOperationsConfigGroup drtConfig = (DrtWithOperationsConfigGroup) MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();
+		DrtWithOperationsConfigGroup drtConfig = (DrtWithOperationsConfigGroup) MultiModeDrtConfigGroup.get(config)
+				.getModalElements().iterator().next();
 		drtConfig.removeParameterSet(drtConfig.getRebalancingParams().get());
-		
+
 		// shift parameters
 		DrtOperationsParams operationsParams = new DrtOperationsParams();
 		drtConfig.addParameterSet(operationsParams);
-		
+
 		OperationFacilitiesParams operationFacilitiesParams = new OperationFacilitiesParams();
 		operationsParams.addParameterSet(operationFacilitiesParams);
-		
+
 		ShiftsParams shiftParams = new ShiftsParams();
 		operationsParams.addParameterSet(shiftParams);
 
@@ -235,7 +235,8 @@ public class AlonsoMoraExamplesIT {
 
 		for (DrtConfigGroup drtCfg : MultiModeDrtConfigGroup.get(config).getModalElements()) {
 			controller.addOverridingModule(new ShiftDrtModeModule(drtCfg));
-			controller.addOverridingQSimModule(new DrtModeQSimModule(drtCfg, new ShiftDrtModeOptimizerQSimModule(drtCfg)));
+			controller.addOverridingQSimModule(
+					new DrtModeQSimModule(drtCfg, new ShiftDrtModeOptimizerQSimModule(drtCfg)));
 			controller.addOverridingQSimModule(new ShiftDvrpFleetQsimModule(drtCfg.getMode()));
 			controller.addOverridingQSimModule(new OperationFacilitiesQSimModule(drtConfig));
 		}
@@ -297,12 +298,11 @@ public class AlonsoMoraExamplesIT {
 		double rejectionRate = Double.parseDouble(params.get("rejectionRate"));
 		double totalTravelTimeMean = Double.parseDouble(params.get("totalTravelTime_mean"));
 
-		var percentage = Percentage.withPercentage(0.00001);
-		assertThat(rejectionRate).isCloseTo(expectedStats.rejectionRate, percentage);
-		assertThat(rejections).isCloseTo(expectedStats.rejections, percentage);
-		assertThat(waitAverage).isCloseTo(expectedStats.waitAverage, percentage);
-		assertThat(inVehicleTravelTimeMean).isCloseTo(expectedStats.inVehicleTravelTimeMean, percentage);
-		assertThat(totalTravelTimeMean).isCloseTo(expectedStats.totalTravelTimeMean, percentage);
+		assertEquals(rejectionRate, expectedStats.rejectionRate);
+		assertEquals(rejections, expectedStats.rejections);
+		assertEquals(waitAverage, expectedStats.waitAverage);
+		assertEquals(inVehicleTravelTimeMean, expectedStats.inVehicleTravelTimeMean);
+		assertEquals(totalTravelTimeMean, expectedStats.totalTravelTimeMean);
 	}
 
 	private static class Stats {

@@ -1,7 +1,9 @@
 package org.matsim.alonso_mora.algorithm.relocation;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,11 +12,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver.Relocation;
@@ -22,19 +22,19 @@ import org.matsim.api.core.v01.network.Link;
 import org.mockito.Mockito;
 
 public class GlpkMpsRelocationSolverTest {
-	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-	@Before
-	public void checkSolver() {
-		Assume.assumeTrue("Checking for availability of GLPK solver", GlpkMpsAssignmentSolver.checkAvailability());
+	@BeforeAll
+	static public void checkSolver() {
+		assertTrue(GlpkMpsAssignmentSolver.checkAvailability(), "Checking for availability of GLPK solver");
 	}
 
 	@Test
-	public void testTwoVehicesOneDestination() throws IOException {
+	public void testTwoVehicesOneDestination(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+
 		GlpkMpsRelocationSolver solver = new GlpkMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
+				problemFile, //
+				solutionFile);
 
 		AlonsoMoraVehicle vehicle = Mockito.mock(AlonsoMoraVehicle.class);
 
@@ -49,10 +49,13 @@ public class GlpkMpsRelocationSolverTest {
 	}
 
 	@Test
-	public void testOneVehicesTwoDestinations() throws IOException {
+	public void testOneVehicesTwoDestinations(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+
 		GlpkMpsRelocationSolver solver = new GlpkMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
+				problemFile, //
+				solutionFile);
 
 		Link link = Mockito.mock(Link.class);
 
@@ -65,16 +68,19 @@ public class GlpkMpsRelocationSolverTest {
 		assertEquals(1, solution.size());
 		assertEquals(relocations.get(0), solution.iterator().next());
 	}
-	
+
 	@Test
-	public void testComplex() throws IOException {
+	public void testComplex(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+
 		GlpkMpsRelocationSolver solver = new GlpkMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
-		
+				problemFile, //
+				solutionFile);
+
 		Link linkA = Mockito.mock(Link.class);
 		Link linkB = Mockito.mock(Link.class);
-		
+
 		AlonsoMoraVehicle vehicle1 = Mockito.mock(AlonsoMoraVehicle.class);
 		AlonsoMoraVehicle vehicle2 = Mockito.mock(AlonsoMoraVehicle.class);
 		AlonsoMoraVehicle vehicle3 = Mockito.mock(AlonsoMoraVehicle.class);
@@ -89,17 +95,20 @@ public class GlpkMpsRelocationSolverTest {
 		Collection<Relocation> solution = solver.solve(relocations);
 
 		assertEquals(2, solution.size());
-		
+
 		List<Relocation> expected = new ArrayList<>(Arrays.asList(relocations.get(0), relocations.get(4)));
 		expected.removeAll(relocations);
 		assertEquals(0, expected.size());
 	}
 
 	@Test
-	public void testEmpty() throws IOException {
+	public void testEmpty(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "solution");
+
 		GlpkMpsRelocationSolver solver = new GlpkMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"));
+				problemFile, //
+				solutionFile);
 
 		Collection<Relocation> solution = solver.solve(Collections.emptyList());
 

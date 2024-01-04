@@ -405,7 +405,6 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(ScheduleTimingUpdater.class), //
 					getter.getModal(Fleet.class), //
 					amConfig.getAssignmentInterval(), //
-					amConfig.getMaximumGroupRequestSize(), //
 					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
 					getter.getModal(LeastCostPathCalculator.class), //
 					getter.getModal(TravelTime.class), //

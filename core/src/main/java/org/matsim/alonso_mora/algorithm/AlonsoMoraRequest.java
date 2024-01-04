@@ -1,7 +1,5 @@
 package org.matsim.alonso_mora.algorithm;
 
-import java.util.Collection;
-
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
@@ -34,9 +32,9 @@ public interface AlonsoMoraRequest extends Comparable<AlonsoMoraRequest> {
 
 	double getLatestAssignmentTime();
 
-	Collection<DrtRequest> getDrtRequests();
+	DrtRequest getDrtRequest();
 	
-	Collection<AcceptedDrtRequest> getAcceptedDrtRequests();
+	AcceptedDrtRequest getAcceptedDrtRequest();
 
 	public int getSize();
 

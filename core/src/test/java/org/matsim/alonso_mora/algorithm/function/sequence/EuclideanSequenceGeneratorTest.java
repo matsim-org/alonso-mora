@@ -1,11 +1,12 @@
 package org.matsim.alonso_mora.algorithm.function.sequence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
@@ -28,7 +29,7 @@ public class EuclideanSequenceGeneratorTest {
 		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
 		Mockito.when(request.getPickupLink()).thenReturn(fromLink);
 		Mockito.when(request.getDropoffLink()).thenReturn(toLink);
-		Mockito.when(request.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request.getDrtRequest()).thenReturn(drtRequest);
 
 		return request;
 	}
@@ -58,8 +59,8 @@ public class EuclideanSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(2, partial);
-		Assert.assertEquals(1, complete);
+		assertEquals(2, partial);
+		assertEquals(1, complete);
 	}
 
 	@Test
@@ -88,8 +89,8 @@ public class EuclideanSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(4, partial);
-		Assert.assertEquals(1, complete);
+		assertEquals(4, partial);
+		assertEquals(1, complete);
 	}
 
 	@Test
@@ -128,8 +129,8 @@ public class EuclideanSequenceGeneratorTest {
 			callIndex++;
 		}
 
-		Assert.assertEquals(5, partial);
-		Assert.assertEquals(1, complete);
+		assertEquals(5, partial);
+		assertEquals(1, complete);
 	}
 
 	@Test

@@ -1,7 +1,9 @@
 package org.matsim.alonso_mora.algorithm.relocation;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,11 +12,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.CbcMpsAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver.Relocation;
@@ -22,19 +22,19 @@ import org.matsim.api.core.v01.network.Link;
 import org.mockito.Mockito;
 
 public class CbcMpsRelocationSolverTest {
-	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-	@Before
-	public void checkSolver() {
-		Assume.assumeTrue("Checking for availability of Cbc solver", CbcMpsAssignmentSolver.checkAvailability());
+	@BeforeAll
+	public static void checkSolver() {
+		assertTrue(CbcMpsAssignmentSolver.checkAvailability(), "Checking for availability of Cbc solver");
 	}
 
 	@Test
-	public void testTwoVehicesOneDestination() throws IOException {
+	public void testTwoVehicesOneDestination(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "problem");
+
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"), 0);
+				problemFile, //
+				solutionFile, 0);
 
 		AlonsoMoraVehicle vehicle = Mockito.mock(AlonsoMoraVehicle.class);
 
@@ -49,10 +49,13 @@ public class CbcMpsRelocationSolverTest {
 	}
 
 	@Test
-	public void testOneVehicesTwoDestinations() throws IOException {
+	public void testOneVehicesTwoDestinations(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "problem");
+
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"), 0);
+				problemFile, //
+				solutionFile, 0);
 
 		Link link = Mockito.mock(Link.class);
 
@@ -67,10 +70,13 @@ public class CbcMpsRelocationSolverTest {
 	}
 
 	@Test
-	public void testComplex() throws IOException {
+	public void testComplex(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "problem");
+
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"), 0);
+				problemFile, //
+				solutionFile, 0);
 
 		Link linkA = Mockito.mock(Link.class);
 		Link linkB = Mockito.mock(Link.class);
@@ -96,10 +102,13 @@ public class CbcMpsRelocationSolverTest {
 	}
 
 	@Test
-	public void testEmpty() throws IOException {
+	public void testEmpty(@TempDir File temporaryFolder) throws IOException {
+		File problemFile = new File(temporaryFolder, "problem");
+		File solutionFile = new File(temporaryFolder, "problem");
+
 		CbcMpsRelocationSolver solver = new CbcMpsRelocationSolver(1000, //
-				temporaryFolder.newFile("problem"), //
-				temporaryFolder.newFile("solution"), 0);
+				problemFile, //
+				solutionFile, 0);
 
 		Collection<Relocation> solution = solver.solve(Collections.emptyList());
 

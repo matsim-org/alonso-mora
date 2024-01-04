@@ -115,23 +115,23 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 			for (AlonsoMoraStop stop : stops) {
 				switch (stop.getType()) {
-				case Dropoff:
+				case Dropoff: {
 					// This means that the stop list contains a stop with a request that is
 					// currently being dropped off in the current task. As we don't want to add
 					// another task with this request to the vehicle's schedule, this should not be
 					// here. Most likely, this is an error in the TravelFunction.
 
-					for (AcceptedDrtRequest drtRequest : stop.getRequest().getAcceptedDrtRequests()) {
-						Verify.verify(!stopTask.getDropoffRequests().containsKey(drtRequest.getId()));
-					}
+					AcceptedDrtRequest drtRequest = stop.getRequest().getAcceptedDrtRequest();
+					Verify.verify(!stopTask.getDropoffRequests().containsKey(drtRequest.getId()));
 
 					break;
-				case Pickup:
-					for (AcceptedDrtRequest drtRequest : stop.getRequest().getAcceptedDrtRequests()) {
-						Verify.verify(!stopTask.getPickupRequests().containsKey(drtRequest.getId()));
-					}
+				}
+				case Pickup: {
+					AcceptedDrtRequest drtRequest = stop.getRequest().getAcceptedDrtRequest();
+					Verify.verify(!stopTask.getPickupRequests().containsKey(drtRequest.getId()));
 
 					break;
+				}
 				case Relocation:
 					break;
 				default:
@@ -288,7 +288,7 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 				// Add requests to the stop task
 
 				if (stop.getType().equals(StopType.Pickup)) {
-					stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addPickupRequest);
+					stopTask.addPickupRequest(stop.getRequest().getAcceptedDrtRequest());
 					stop.getRequest().setPickupTask(vehicle, stopTask);
 
 					if (checkDeterminsticTravelTimes) {
@@ -298,7 +298,7 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 								"Checking for determinstic travel times and found mismatch between expected stop time and planned stop time.");
 					}
 				} else if (stop.getType().equals(StopType.Dropoff)) {
-					stop.getRequest().getAcceptedDrtRequests().forEach(stopTask::addDropoffRequest);
+					stopTask.addDropoffRequest(stop.getRequest().getAcceptedDrtRequest());
 					stop.getRequest().setDropoffTask(vehicle, stopTask);
 
 					if (checkDeterminsticTravelTimes) {
@@ -443,9 +443,9 @@ public class DefaultAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 		if (currentTask instanceof DrtStayTask) {
 			currentTask.setEndTime(Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()));
-		}else if(currentTask instanceof WaitForShiftStayTask)  {
-			if(currentTask.getEndTime() == now) {
-				//if the shift just started, re-create the stay task
+		} else if (currentTask instanceof WaitForShiftStayTask) {
+			if (currentTask.getEndTime() == now) {
+				// if the shift just started, re-create the stay task
 				StayTask stayTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
 						Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()), currentLink);
 				schedule.addTask(stayTask);

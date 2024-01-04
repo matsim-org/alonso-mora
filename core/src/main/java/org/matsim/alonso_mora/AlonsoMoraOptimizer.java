@@ -2,7 +2,6 @@ package org.matsim.alonso_mora;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +14,6 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraAlgorithm;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequestFactory;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
-import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.fleet.Fleet;
@@ -41,8 +39,6 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 	private final List<DrtRequest> submittedRequests = new LinkedList<>();
 	private final double assignmentInterval;
 
-	private final int maximumGroupRequestSize;
-
 	private final ForkJoinPool forkJoinPool;
 	private final LeastCostPathCalculator router;
 	private final TravelTime travelTime;
@@ -57,14 +53,13 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 
 	public AlonsoMoraOptimizer(AlonsoMoraAlgorithm algorithm, AlonsoMoraRequestFactory requestFactory,
 			ScheduleTimingUpdater scheduleTimingUpdater, Fleet fleet, double assignmentInterval,
-			int maximumGroupRequestSize, ForkJoinPool forkJoinPool, LeastCostPathCalculator router,
-			TravelTime travelTime, double prebookingHorizon, InformationCollector collector) {
+			ForkJoinPool forkJoinPool, LeastCostPathCalculator router, TravelTime travelTime, double prebookingHorizon,
+			InformationCollector collector) {
 		this.algorithm = algorithm;
 		this.requestFactory = requestFactory;
 		this.assignmentInterval = assignmentInterval;
 		this.scheduleTimingUpdater = scheduleTimingUpdater;
 		this.fleet = fleet;
-		this.maximumGroupRequestSize = maximumGroupRequestSize;
 		this.forkJoinPool = forkJoinPool;
 		this.router = router;
 		this.travelTime = travelTime;
@@ -77,69 +72,37 @@ public class AlonsoMoraOptimizer implements DrtOptimizer {
 		submittedRequests.add((DrtRequest) request);
 	}
 
-	/**
-	 * Goes through the submitted individual requests and tries to find those that
-	 * should be aggregated to a collective request.
-	 */
-	private List<List<DrtRequest>> poolRequests(List<DrtRequest> submittedRequests) {
-		submittedRequests = new LinkedList<>(submittedRequests);
-		List<List<DrtRequest>> allPooledRequests = new LinkedList<>();
-
-		while (submittedRequests.size() > 0) {
-			List<DrtRequest> pooledRequests = new LinkedList<>();
-			pooledRequests.add(submittedRequests.remove(0));
-			DrtRequest mainRequest = pooledRequests.get(0);
-
-			Iterator<DrtRequest> iterator = submittedRequests.iterator();
-
-			while (iterator.hasNext() && pooledRequests.size() < maximumGroupRequestSize) {
-				DrtRequest nextRequest = iterator.next();
-
-				if (nextRequest.getFromLink() == mainRequest.getFromLink()) {
-					if (nextRequest.getToLink() == mainRequest.getToLink()) {
-						if (nextRequest.getEarliestStartTime() == mainRequest.getEarliestStartTime()) {
-							pooledRequests.add(nextRequest);
-							iterator.remove();
-						}
-					}
-				}
-			}
-
-			allPooledRequests.add(pooledRequests);
-		}
-
-		return allPooledRequests;
-	}
-
 	@Override
 	public void notifyMobsimBeforeSimStep(@SuppressWarnings("rawtypes") MobsimBeforeSimStepEvent e) {
 		double now = e.getSimulationTime();
-		
+
 		if (now % assignmentInterval == 0) {
 			List<AlonsoMoraRequest> newRequests = new LinkedList<>();
 
-			List<List<DrtRequest>> pooledRequests = poolRequests(submittedRequests);
-			List<VrpPathWithTravelData> paths = new ArrayList<>(Collections.nCopies(pooledRequests.size(), null));
+			List<DrtRequest> submittedRequests = new ArrayList<>(this.submittedRequests);
+			this.submittedRequests.clear();
+
+			List<VrpPathWithTravelData> paths = new ArrayList<>(Collections.nCopies(submittedRequests.size(), null));
 
 			// Here this direct routing is performed
 			forkJoinPool.submit(() -> {
-				IntStream.range(0, pooledRequests.size()).parallel().forEach(i -> {
-					DrtRequest request = pooledRequests.get(i).get(0);
-					paths.set(i, VrpPaths.calcAndCreatePath(request.getFromLink(), request.getToLink(), request.getEarliestStartTime(), router,
-							travelTime));
+				IntStream.range(0, submittedRequests.size()).parallel().forEach(i -> {
+					DrtRequest request = submittedRequests.get(i);
+					paths.set(i, VrpPaths.calcAndCreatePath(request.getFromLink(), request.getToLink(),
+							request.getEarliestStartTime(), router, travelTime));
 				});
 			}).join();
 
 			// Grouped requests
-			for (int i = 0; i < pooledRequests.size(); i++) {
-				List<DrtRequest> pool = pooledRequests.get(i);
-				
-				double earliestDepartureTime = pool.get(0).getEarliestStartTime();
+			for (int i = 0; i < submittedRequests.size(); i++) {
+				DrtRequest drtRequest = submittedRequests.get(i);
+
+				double earliestDepartureTime = drtRequest.getEarliestStartTime();
 				double directArrivalTime = paths.get(i).getTravelTime() + earliestDepartureTime;
 				double directRideDistance = VrpPaths.calcDistance(paths.get(i));
 
-				AlonsoMoraRequest request = requestFactory.createRequest(pool, directArrivalTime, earliestDepartureTime,
-						directRideDistance);
+				AlonsoMoraRequest request = requestFactory.createRequest(drtRequest, directArrivalTime,
+						earliestDepartureTime, directRideDistance);
 
 				if (now >= request.getEarliestPickupTime() - prebookingHorizon) {
 					newRequests.add(request);

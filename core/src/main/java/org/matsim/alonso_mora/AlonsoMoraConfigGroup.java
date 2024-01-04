@@ -95,22 +95,6 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 		this.maximumQueueTime = value;
 	}
 
-	private final static String MAXIMUM_GROUP_REQUEST_SIZE = "maximumGroupRequestSize";
-	private final static String MAXIMUM_GROUP_REQUEST_SIZE_COMMENT = "For computational reasons, the implementation can group multiple individual requests with the same departure time and OD requirements into one aggregate request. This value defines the size limit for aggregation as large group requests may not fit in some vehicles (based on their capacity).";
-
-	@Positive
-	private int maximumGroupRequestSize = 6;
-
-	@StringGetter(MAXIMUM_GROUP_REQUEST_SIZE)
-	public int getMaximumGroupRequestSize() {
-		return maximumGroupRequestSize;
-	}
-
-	@StringSetter(MAXIMUM_GROUP_REQUEST_SIZE)
-	public void setMaximumGroupRequestSize(int value) {
-		this.maximumGroupRequestSize = value;
-	}
-
 	private final static String USE_PLANNED_PICKUP_TIME = "usePlannedPickupTime";
 	private final static String USE_PLANNED_PICKUP_TIME_COMMENT = "By default, the algorithm updates the latest pickup time for a request to the planned pickup time that has been calculated at the first assignment. Subsequent dispatching steps must adhere to that value. Using this flag, this functionality may be turned off.";
 
@@ -249,7 +233,6 @@ public class AlonsoMoraConfigGroup extends ReflectiveConfigGroup {
 		comments.put(MODE, MODE_COMMENT);
 		comments.put(LOGGING_INTERVAL, LOGGING_INTERVAL_COMMENT);
 		comments.put(MAXIMUM_QUEUE_TIME, MAXIMUM_QUEUE_TIME_COMMENT);
-		comments.put(MAXIMUM_GROUP_REQUEST_SIZE, MAXIMUM_GROUP_REQUEST_SIZE_COMMENT);
 		comments.put(USE_PLANNED_PICKUP_TIME, USE_PLANNED_PICKUP_TIME_COMMENT);
 		comments.put(PLANNED_PICKUP_TIME_SLACK, PLANNED_PICKUP_TIME_SLACK_COMMENT);
 		comments.put(CHECK_DETERMINISTIC_TRAVEL_TIMES, CHECK_DETERMINISTIC_TRAVEL_TIMES_COMMENT);

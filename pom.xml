@@ -6,17 +6,22 @@
 	<artifactId>alonso-mora</artifactId>
 	<version>1.0.0</version>
 	<packaging>pom</packaging>
-	<name>Implementation of the fleet dispatcher by Alonso-Mora et al. for MATSim</name>
-	<description>This package implements the pooled fleet dispatching algorithm introduced by
+	<name>Implementation of the fleet dispatcher by Alonso-Mora et al. for
+		MATSim</name>
+	<description>This package implements the pooled fleet dispatching algorithm
+		introduced by
 
-Alonso-Mora, J., Samaranayake, S., Wallar, A., Frazzoli, E., Rus, D., 2017. On-demand high-capacity ride-sharing via dynamic trip-vehicle assignment. Proc Natl Acad Sci USA 114, 462–467. 
+		Alonso-Mora, J., Samaranayake, S., Wallar, A., Frazzoli, E., Rus, D.,
+		2017. On-demand high-capacity ride-sharing via dynamic trip-vehicle
+		assignment. Proc Natl Acad Sci USA 114, 462–467.
 
-to the MATSim framework.</description>
+		to the MATSim framework.</description>
 
 	<properties>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<matsim.version>16.0-PR2966</matsim.version>
+		<matsim.version>16.0-PR3034</matsim.version>
+		<junit.version>5.10.1</junit.version>
 	</properties>
 
 	<repositories>
@@ -40,21 +45,21 @@ to the MATSim framework.</description>
 
 	<dependencies>
 		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<version>3.15.0</version>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<version>3.3.3</version>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<version>5.8.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

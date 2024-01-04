@@ -1,23 +1,20 @@
 package org.matsim.alonso_mora.algorithm.relocation;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver.Relocation;
 import org.matsim.api.core.v01.network.Link;
 import org.mockito.Mockito;
 
 public class MpsRelocationWriterTest {
-	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
 	@Test
-	public void testWriter() throws IOException {
+	public void testWriter(@TempDir File temporaryFolder) throws IOException {
 		List<Relocation> relocations = new LinkedList<>();
 
 		AlonsoMoraVehicle vehicle = Mockito.mock(AlonsoMoraVehicle.class);
@@ -26,6 +23,6 @@ public class MpsRelocationWriterTest {
 		relocations.add(new Relocation(vehicle, Mockito.mock(Link.class), 50.0));
 
 		MpsRelocationWriter writer = new MpsRelocationWriter(relocations);
-		writer.write(temporaryFolder.newFile("problem"));
+		writer.write(new File(temporaryFolder, "problem"));
 	}
 }

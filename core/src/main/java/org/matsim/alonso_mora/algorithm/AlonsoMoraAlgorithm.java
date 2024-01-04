@@ -21,7 +21,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
-import org.matsim.alonso_mora.AlonsoMoraSubmissionEvent;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.Solution;
@@ -225,10 +224,10 @@ public class AlonsoMoraAlgorithm {
 			if (now > request.getLatestAssignmentTime()) {
 				iterator.remove();
 
-				for (DrtRequest drtRequest : request.getDrtRequests()) {
-					eventsManager.processEvent(new PassengerRequestRejectedEvent(now, mode, drtRequest.getId(),
-							drtRequest.getPassengerIds(), "queue time exeeded"));
-				}
+				DrtRequest drtRequest = request.getDrtRequest();
+
+				eventsManager.processEvent(new PassengerRequestRejectedEvent(now, mode, drtRequest.getId(),
+						drtRequest.getPassengerIds(), "queue time exeeded"));
 
 				numberOfRejectedRequests++;
 			}
@@ -239,11 +238,6 @@ public class AlonsoMoraAlgorithm {
 		 * create events to notify submission.s
 		 */
 		queuedRequests.addAll(newRequests);
-
-		for (AlonsoMoraRequest request : newRequests) {
-			eventsManager.processEvent(new AlonsoMoraSubmissionEvent(now,
-					request.getDrtRequests().stream().map(r -> r.getId()).collect(Collectors.toSet())));
-		}
 	}
 
 	/**
@@ -476,13 +470,12 @@ public class AlonsoMoraAlgorithm {
 						}
 					}
 				}
-				
+
 				/* For each DRT request, we create a scheduling event */
-				for (AcceptedDrtRequest drtRequest : request.getAcceptedDrtRequests()) {
-					eventsManager.processEvent(new PassengerRequestScheduledEvent(now, mode, drtRequest.getId(),
-							drtRequest.getPassengerIds(), trip.getVehicle().getVehicle().getId(), expectedPickupTime,
-							expectedDropoffTime));
-				}
+				AcceptedDrtRequest drtRequest = request.getAcceptedDrtRequest();
+				eventsManager.processEvent(
+						new PassengerRequestScheduledEvent(now, mode, drtRequest.getId(), drtRequest.getPassengerIds(),
+								trip.getVehicle().getVehicle().getId(), expectedPickupTime, expectedDropoffTime));
 			}
 		}
 
@@ -628,14 +621,14 @@ public class AlonsoMoraAlgorithm {
 
 			information.numberOfRelocations++;
 		}
-		
+
 		if (settings.useStepwiseRelocation) {
 			List<AlonsoMoraVehicle> stopVehicles = new ArrayList<>(relocatableVehicles);
 			relocations.forEach(r -> stopVehicles.remove(r.vehicle));
-			
+
 			for (AlonsoMoraVehicle vehicle : stopVehicles) {
-				vehicle.setRoute(
-						Collections.singletonList(new AlonsoMoraStop(StopType.Relocation, vehicle.getNextDiversion(now).link, null)));
+				vehicle.setRoute(Collections.singletonList(
+						new AlonsoMoraStop(StopType.Relocation, vehicle.getNextDiversion(now).link, null)));
 				scheduler.schedule(vehicle, now);
 			}
 		}

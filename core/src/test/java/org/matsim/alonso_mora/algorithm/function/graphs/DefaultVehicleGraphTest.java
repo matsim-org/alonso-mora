@@ -1,5 +1,7 @@
 package org.matsim.alonso_mora.algorithm.function.graphs;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -9,8 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
@@ -46,8 +47,8 @@ public class DefaultVehicleGraphTest {
 		List<AlonsoMoraTrip> trips = graph.stream().collect(Collectors.toList());
 
 		// Only one request, so we only expect one trip
-		Assert.assertEquals(1, trips.size());
-		Assert.assertEquals(1, trips.stream().filter(t -> t.getLength() == 1).count());
+		assertEquals(1, trips.size());
+		assertEquals(1, trips.stream().filter(t -> t.getLength() == 1).count());
 	}
 
 	@Test
@@ -72,9 +73,9 @@ public class DefaultVehicleGraphTest {
 		List<AlonsoMoraTrip> trips = graph.stream().collect(Collectors.toList());
 
 		// Two connected requests, we have two single rides and one combined
-		Assert.assertEquals(3, trips.size());
-		Assert.assertEquals(2, trips.stream().filter(t -> t.getLength() == 1).count());
-		Assert.assertEquals(1, trips.stream().filter(t -> t.getLength() == 2).count());
+		assertEquals(3, trips.size());
+		assertEquals(2, trips.stream().filter(t -> t.getLength() == 1).count());
+		assertEquals(1, trips.stream().filter(t -> t.getLength() == 2).count());
 	}
 
 	@Test
@@ -98,8 +99,8 @@ public class DefaultVehicleGraphTest {
 		List<AlonsoMoraTrip> trips = graph.stream().collect(Collectors.toList());
 
 		// Two unconnected requests, we have two single rides
-		Assert.assertEquals(2, trips.size());
-		Assert.assertEquals(2, trips.stream().filter(t -> t.getLength() == 1).count());
+		assertEquals(2, trips.size());
+		assertEquals(2, trips.stream().filter(t -> t.getLength() == 1).count());
 	}
 
 	@Test
@@ -142,9 +143,9 @@ public class DefaultVehicleGraphTest {
 		// Only two passengers allowed currently (weight 25),
 		// we expect 5 single passengers rides and 3 + 3 = 6 two-passengres rides
 
-		Assert.assertEquals(11, trips.size());
-		Assert.assertEquals(5, trips.stream().filter(t -> t.getLength() == 1).count());
-		Assert.assertEquals(6, trips.stream().filter(t -> t.getLength() == 2).count());
+		assertEquals(11, trips.size());
+		assertEquals(5, trips.stream().filter(t -> t.getLength() == 1).count());
+		assertEquals(6, trips.stream().filter(t -> t.getLength() == 2).count());
 	}
 
 	@Test
@@ -188,10 +189,10 @@ public class DefaultVehicleGraphTest {
 		// we expect 5 single passengers rides and 3 + 3 = 6 two-passengres rides, and 2
 		// three-passenger rides
 
-		Assert.assertEquals(13, trips.size());
-		Assert.assertEquals(5, trips.stream().filter(t -> t.getLength() == 1).count());
-		Assert.assertEquals(6, trips.stream().filter(t -> t.getLength() == 2).count());
-		Assert.assertEquals(2, trips.stream().filter(t -> t.getLength() == 3).count());
+		assertEquals(13, trips.size());
+		assertEquals(5, trips.stream().filter(t -> t.getLength() == 1).count());
+		assertEquals(6, trips.stream().filter(t -> t.getLength() == 2).count());
+		assertEquals(2, trips.stream().filter(t -> t.getLength() == 3).count());
 	}
 
 	@Test
@@ -241,11 +242,11 @@ public class DefaultVehicleGraphTest {
 		// we expect 6 single passengers rides and 3 + 3 + 3 = 9 two-passengres rides,
 		// and 4 three-passenger ride, 1 four-passenger-ride
 
-		Assert.assertEquals(21, trips.size());
-		Assert.assertEquals(6, trips.stream().filter(t -> t.getLength() == 1).count());
-		Assert.assertEquals(9, trips.stream().filter(t -> t.getLength() == 2).count());
-		Assert.assertEquals(5, trips.stream().filter(t -> t.getLength() == 3).count());
-		Assert.assertEquals(1, trips.stream().filter(t -> t.getLength() == 4).count());
+		assertEquals(21, trips.size());
+		assertEquals(6, trips.stream().filter(t -> t.getLength() == 1).count());
+		assertEquals(9, trips.stream().filter(t -> t.getLength() == 2).count());
+		assertEquals(5, trips.stream().filter(t -> t.getLength() == 3).count());
+		assertEquals(1, trips.stream().filter(t -> t.getLength() == 4).count());
 	}
 
 	static private class MockFunction implements AlonsoMoraFunction {
@@ -392,17 +393,17 @@ public class DefaultVehicleGraphTest {
 		}
 
 		@Override
-		public Collection<DrtRequest> getDrtRequests() {
+		public DrtRequest getDrtRequest() {
 			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
-		public Collection<AcceptedDrtRequest> getAcceptedDrtRequests() {
+		public AcceptedDrtRequest getAcceptedDrtRequest() {
 			// TODO Auto-generated method stub
 			return null;
 		}
-		
+
 		@Override
 		public int getSize() {
 			// TODO Auto-generated method stub

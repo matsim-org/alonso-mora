@@ -1,13 +1,14 @@
 package org.matsim.alonso_mora.gurobi;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
@@ -18,9 +19,9 @@ import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.mockito.Mockito;
 
 public class CplexAssignmentSolverTest {
-	@Before
-	public void checkSolver() {
-		Assume.assumeTrue("Checking for availability of CPLEX solver", CplexAssignmentSolver.checkAvailability());
+	@BeforeAll
+	static public void checkSolver() {
+		assertTrue(CplexAssignmentSolver.checkAvailability(), "Checking for availability of CPLEX solver");
 	}
 
 	private AlonsoMoraRequest mockRequest() {
@@ -60,8 +61,8 @@ public class CplexAssignmentSolverTest {
 		List<AlonsoMoraTrip> candidates = Arrays.asList(trip);
 		Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-		Assert.assertEquals(1, selection.size());
-		Assert.assertTrue(selection.contains(trip));
+		assertEquals(1, selection.size());
+		assertTrue(selection.contains(trip));
 	}
 
 	@Test
@@ -79,9 +80,9 @@ public class CplexAssignmentSolverTest {
 		List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2);
 		Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-		Assert.assertEquals(2, selection.size());
-		Assert.assertTrue(selection.contains(trip1));
-		Assert.assertTrue(selection.contains(trip2));
+		assertEquals(2, selection.size());
+		assertTrue(selection.contains(trip1));
+		assertTrue(selection.contains(trip2));
 	}
 
 	@Test
@@ -103,8 +104,8 @@ public class CplexAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip3));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip3));
 		}
 	}
 
@@ -126,8 +127,8 @@ public class CplexAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip1));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip1));
 		}
 	}
 }

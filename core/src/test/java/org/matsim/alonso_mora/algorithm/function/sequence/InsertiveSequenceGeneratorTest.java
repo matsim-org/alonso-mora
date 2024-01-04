@@ -1,11 +1,12 @@
 package org.matsim.alonso_mora.algorithm.function.sequence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.function.sequence.InsertiveSequenceGenerator.IndexCalculator;
 import org.matsim.contrib.drt.passenger.DrtRequest;
@@ -17,16 +18,16 @@ public class InsertiveSequenceGeneratorTest {
 		DrtRequest drtRequest = Mockito.mock(DrtRequest.class);
 
 		AlonsoMoraRequest request1 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request1.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request1.getDrtRequest()).thenReturn(drtRequest);
 
 		AlonsoMoraRequest request2 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request2.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request2.getDrtRequest()).thenReturn(drtRequest);
 
 		AlonsoMoraRequest request3 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request3.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request3.getDrtRequest()).thenReturn(drtRequest);
 
 		AlonsoMoraRequest request4 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request4.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request4.getDrtRequest()).thenReturn(drtRequest);
 
 		List<AlonsoMoraRequest> requests = new LinkedList<>();
 
@@ -55,8 +56,8 @@ public class InsertiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(7364, partial);
-		Assert.assertEquals(2520, complete);
+		assertEquals(7364, partial);
+		assertEquals(2520, complete);
 	}
 
 	@Test
@@ -64,16 +65,16 @@ public class InsertiveSequenceGeneratorTest {
 		DrtRequest drtRequest = Mockito.mock(DrtRequest.class);
 
 		AlonsoMoraRequest request1 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request1.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request1.getDrtRequest()).thenReturn(drtRequest);
 
 		AlonsoMoraRequest request2 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request2.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request2.getDrtRequest()).thenReturn(drtRequest);
 
 		AlonsoMoraRequest request3 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request3.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request3.getDrtRequest()).thenReturn(drtRequest);
 
 		AlonsoMoraRequest request4 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request4.getDrtRequests()).thenReturn(Collections.singleton(drtRequest));
+		Mockito.when(request4.getDrtRequest()).thenReturn(drtRequest);
 
 		List<AlonsoMoraRequest> requests = new LinkedList<>();
 
@@ -108,7 +109,7 @@ public class InsertiveSequenceGeneratorTest {
 			generator.advance();
 		}
 
-		Assert.assertEquals(1440, partial);
-		Assert.assertEquals(420, complete);
+		assertEquals(1440, partial);
+		assertEquals(420, complete);
 	}
 }

@@ -19,14 +19,10 @@ public class AlonsoMoraModeModule extends AbstractDvrpModeModule {
 			return new InformationCollector();
 		})).asEagerSingleton();
 
-		bindModal(RequestAggregationHandler.class).to(RequestAggregationHandler.class).asEagerSingleton();
-		addEventHandlerBinding().to(modalKey(RequestAggregationHandler.class));
-
 		bindModal(AnalysisListener.class).toProvider(modalProvider(getter -> {
 			return new AnalysisListener( //
 					getter.getModal(InformationCollector.class), //
-					getter.get(OutputDirectoryHierarchy.class), //
-					getter.getModal(RequestAggregationHandler.class) //
+					getter.get(OutputDirectoryHierarchy.class) //
 			);
 		})).asEagerSingleton();
 

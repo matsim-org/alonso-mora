@@ -1,11 +1,13 @@
 package org.matsim.alonso_mora.algorithm.assignment;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
@@ -45,8 +47,8 @@ public class GreedyTripFirstAssignmentSolverTest {
 		List<AlonsoMoraTrip> candidates = Arrays.asList(trip);
 		Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-		Assert.assertEquals(1, selection.size());
-		Assert.assertTrue(selection.contains(trip));
+		assertEquals(1, selection.size());
+		assertTrue(selection.contains(trip));
 	}
 
 	@Test
@@ -64,9 +66,9 @@ public class GreedyTripFirstAssignmentSolverTest {
 		List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2);
 		Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-		Assert.assertEquals(2, selection.size());
-		Assert.assertTrue(selection.contains(trip1));
-		Assert.assertTrue(selection.contains(trip2));
+		assertEquals(2, selection.size());
+		assertTrue(selection.contains(trip1));
+		assertTrue(selection.contains(trip2));
 	}
 
 	@Test
@@ -85,8 +87,8 @@ public class GreedyTripFirstAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip1));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip1));
 		}
 
 		{
@@ -97,8 +99,8 @@ public class GreedyTripFirstAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip2));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip2));
 		}
 
 		{
@@ -109,8 +111,8 @@ public class GreedyTripFirstAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip3));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip3));
 		}
 	}
 
@@ -133,8 +135,8 @@ public class GreedyTripFirstAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3, trip4);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(1, selection.size());
-			Assert.assertTrue(selection.contains(trip3));
+			assertEquals(1, selection.size());
+			assertTrue(selection.contains(trip3));
 		}
 
 		{
@@ -146,9 +148,9 @@ public class GreedyTripFirstAssignmentSolverTest {
 			List<AlonsoMoraTrip> candidates = Arrays.asList(trip1, trip2, trip3, trip4);
 			Collection<AlonsoMoraTrip> selection = solver.solve(candidates.stream()).trips;
 
-			Assert.assertEquals(2, selection.size());
-			Assert.assertTrue(selection.contains(trip1));
-			Assert.assertTrue(selection.contains(trip2));
+			assertEquals(2, selection.size());
+			assertTrue(selection.contains(trip1));
+			assertTrue(selection.contains(trip2));
 		}
 	}
 }
