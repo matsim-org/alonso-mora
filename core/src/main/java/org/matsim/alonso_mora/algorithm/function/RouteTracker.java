@@ -197,8 +197,8 @@ public class RouteTracker {
 				AlonsoMoraStop stop = stops.get(i);
 
 				final double vehicleDepartureTime = stopArrivalTime + vehicleStopDuration;
-
-				final double stopDepartureTime;
+				double stopDepartureTime = Math.max(departureTimes.get(i - 1), vehicleDepartureTime);
+				
 				if (stop.getType().equals(StopType.Pickup)) {
 					double passengerDepartureTime = Math.max(stopArrivalTime,
 							stop.getRequest().getEarliestPickupTime());
@@ -206,13 +206,13 @@ public class RouteTracker {
 							.calcPickupDuration(dvrpVehicle(vehicle), stop.getRequest().getDrtRequest());
 					stop.setTime(passengerPickupTime);
 
-					stopDepartureTime = Math.max(passengerPickupTime, vehicleDepartureTime);
+					stopDepartureTime = Math.max(passengerPickupTime, stopDepartureTime);
 				} else if (stop.getType().equals(StopType.Dropoff)) {
 					double passengerDropoffTime = stopArrivalTime + stopDurationProvider
 							.calcDropoffDuration(dvrpVehicle(vehicle), stop.getRequest().getDrtRequest());
 					stop.setTime(passengerDropoffTime);
 
-					stopDepartureTime = Math.max(passengerDropoffTime, vehicleDepartureTime);
+					stopDepartureTime = Math.max(passengerDropoffTime, stopDepartureTime);
 				} else if (stop.getType().equals(StopType.Relocation)) {
 					stopDepartureTime = stopArrivalTime; // relocation
 				} else {
