@@ -9,6 +9,6 @@
 	<parent>
 		<groupId>org.matsim</groupId>
 		<artifactId>alonso-mora</artifactId>
-		<version>1.0.0</version>
+		<version>1.0.0-irtx-SNAPSHOT</version>
 	</parent>
 </project>

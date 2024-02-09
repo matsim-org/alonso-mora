@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.matsim</groupId>
 	<artifactId>alonso-mora</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.0-irtx-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Implementation of the fleet dispatcher by Alonso-Mora et al. for
 		MATSim</name>
@@ -34,13 +34,29 @@
 			<id>matsim</id>
 			<url>https://repo.matsim.org/repository/matsim</url>
 		</repository>
+		<repository>
+			<id>irtx-alsonso-mora</id>
+			<url>https://git.irt-systemx.fr/api/v4/projects/5623/packages/maven</url>
+		</repository>
 	</repositories>
+
+	<distributionManagement>
+		<repository>
+			<id>irtx-alsonso-mora</id>
+			<url>https://git.irt-systemx.fr/api/v4/projects/5623/packages/maven</url>
+		</repository>
+		<snapshotRepository>
+			<id>irtx-alsonso-mora</id>
+			<url>https://git.irt-systemx.fr/api/v4/projects/5623/packages/maven</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<modules>
 		<module>core</module>
-		<module>glpk</module>
-		<module>gurobi</module>
-		<module>cplex</module>
+		<!-- exclude for deployment -->
+		<!-- module>glpk</module -->
+		<!-- module>gurobi</module -->
+		<!-- module>cplex</module -->
 	</modules>
 
 	<dependencies>
