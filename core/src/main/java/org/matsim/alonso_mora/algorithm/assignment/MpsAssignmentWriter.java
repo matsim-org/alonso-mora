@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
@@ -48,18 +49,18 @@ public class MpsAssignmentWriter {
 
 		int rowIndex = 0;
 
-		writer.write(String.format(" N R%07d\n", rowIndex));
+		writer.write(String.format(Locale.US, " N R%07d\n", rowIndex));
 		rowIndex++;
 
 		// <= 1 rows for the vehicles
 		for (int i = 0; i < numberOfVehicles; i++) {
-			writer.write(String.format(" L R%07d\n", rowIndex));
+			writer.write(String.format(Locale.US, " L R%07d\n", rowIndex));
 			rowIndex++;
 		}
 
 		// == 1 rows for the requests
 		for (int i = 0; i < numberOfRequests; i++) {
-			writer.write(String.format(" E R%07d\n", rowIndex));
+			writer.write(String.format(Locale.US, " E R%07d\n", rowIndex));
 			rowIndex++;
 		}
 
@@ -69,40 +70,40 @@ public class MpsAssignmentWriter {
 		// Trip influences
 		for (int i = 0; i < numberOfTrips; i++) {
 			AlonsoMoraTrip trip = tripList.get(i);
-			writer.write(String.format(" T%d R%07d %f\n", i, 0, trip.getResult().getCost()));
+			writer.write(String.format(Locale.US, " T%d R%07d %f\n", i, 0, trip.getResult().getCost()));
 
 			int vehicleIndex = vehicleList.indexOf(trip.getVehicle());
-			writer.write(String.format(" T%d R%07d 1\n", i, vehicleIndex + 1));
+			writer.write(String.format(Locale.US, " T%d R%07d 1\n", i, vehicleIndex + 1));
 
 			for (AlonsoMoraRequest request : trip.getRequests()) {
 				int requestIndex = requestList.indexOf(request);
-				writer.write(String.format(" T%d R%07d 1\n", i, requestIndex + numberOfVehicles + 1));
+				writer.write(String.format(Locale.US, " T%d R%07d 1\n", i, requestIndex + numberOfVehicles + 1));
 			}
 		}
 
 		// Request influences
 		for (int i = 0; i < numberOfRequests; i++) {
 			double penalty = requestList.get(i).isAssigned() ? unassignmentPenalty : rejectionPenalty;
-			writer.write(String.format(" x%d R%07d %f R%07d 1\n", i, 0, penalty, i + numberOfVehicles + 1));
+			writer.write(String.format(Locale.US, " x%d R%07d %f R%07d 1\n", i, 0, penalty, i + numberOfVehicles + 1));
 		}
 
 		writer.write(" M0000002 'MARKER' 'INTEND'\n");
 		writer.write("RHS\n");
 
 		for (int i = 0; i < numberOfVehicles + numberOfRequests; i++) {
-			writer.write(String.format(" RHS1 R%07d 1\n", i + 1));
+			writer.write(String.format(Locale.US, " RHS1 R%07d 1\n", i + 1));
 		}
 
 		writer.write("BOUNDS\n");
 
 		// Trip variables bounds
 		for (int i = 0; i < numberOfTrips; i++) {
-			writer.write(String.format(" UP BND1 T%d 1\n", i));
+			writer.write(String.format(Locale.US, " UP BND1 T%d 1\n", i));
 		}
 
 		// Trip variables bounds
 		for (int i = 0; i < numberOfRequests; i++) {
-			writer.write(String.format(" UP BND1 x%d 1\n", i));
+			writer.write(String.format(Locale.US, " UP BND1 x%d 1\n", i));
 		}
 
 		writer.write("ENDATA\n");

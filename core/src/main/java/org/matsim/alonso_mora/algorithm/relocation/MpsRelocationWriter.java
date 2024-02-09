@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver.Relocation;
@@ -36,10 +37,10 @@ public class MpsRelocationWriter {
 		writer.write("ROWS\n");
 
 		// Objective
-		writer.write(String.format(" N R%07d\n", 0));
+		writer.write(String.format(Locale.US, " N R%07d\n", 0));
 
 		// Constraint (equality)
-		writer.write(String.format(" E R%07d\n", 1));
+		writer.write(String.format(Locale.US, " E R%07d\n", 1));
 
 		writer.write("COLUMNS\n");
 		writer.write(" M0000001 'MARKER' 'INTORG'\n");
@@ -47,21 +48,21 @@ public class MpsRelocationWriter {
 		for (int i = 0; i < numberOfVariables; i++) {
 			// Objective
 			Relocation relocation = relocations.get(i);
-			writer.write(String.format(" T%d R%07d %f", i, 0, relocation.cost));
+			writer.write(String.format(Locale.US, " T%d R%07d %f", i, 0, relocation.cost));
 
 			// Constraint
-			writer.write(String.format(" R%07d 1\n", 1));
+			writer.write(String.format(Locale.US, " R%07d 1\n", 1));
 		}
 
 		writer.write(" M0000002 'MARKER' 'INTEND'\n");
 		writer.write("RHS\n");
-		writer.write(String.format(" RHS1 R%07d %d\n", 1, numberOfAssignments));
+		writer.write(String.format(Locale.US, " RHS1 R%07d %d\n", 1, numberOfAssignments));
 
 		writer.write("BOUNDS\n");
 
 		for (int i = 0; i < numberOfVariables; i++) {
-			writer.write(String.format(" UP BND1 T%d 1\n", i));
-			writer.write(String.format(" LO BND1 T%d 0\n", i));
+			writer.write(String.format(Locale.US, " UP BND1 T%d 1\n", i));
+			writer.write(String.format(Locale.US, " LO BND1 T%d 0\n", i));
 		}
 
 		writer.write("ENDATA\n");
