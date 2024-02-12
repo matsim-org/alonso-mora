@@ -35,14 +35,11 @@ public class GlpkJniAssignmentSolver implements AssignmentSolver {
 
 	private static final Logger logger = LogManager.getLogger(GlpkJniAssignmentSolver.class);
 
-	private final double unassignmentPenalty;
-	private final double rejectionPenalty;
+	private final RejectionPenalty rejectionPenalty;
 	private final double timeLimit;
 	private final double optimalityGap;
 
-	public GlpkJniAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, double timeLimit,
-			double optimalityGap) {
-		this.unassignmentPenalty = unassignmentPenalty;
+	public GlpkJniAssignmentSolver(RejectionPenalty rejectionPenalty, double timeLimit, double optimalityGap) {
 		this.rejectionPenalty = rejectionPenalty;
 		this.timeLimit = timeLimit;
 		this.optimalityGap = optimalityGap;
@@ -161,7 +158,7 @@ public class GlpkJniAssignmentSolver implements AssignmentSolver {
 		}
 
 		for (int i = 0; i < numberOfRequests; i++) {
-			double penalty = requestList.get(i).isAssigned() ? unassignmentPenalty : rejectionPenalty;
+			double penalty = rejectionPenalty.getPenalty(requestList.get(i));
 			GLPK.glp_set_obj_coef(problem, i + numberOfTrips + 1, penalty);
 		}
 

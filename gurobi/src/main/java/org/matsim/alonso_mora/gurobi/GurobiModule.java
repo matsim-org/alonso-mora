@@ -3,6 +3,7 @@ package org.matsim.alonso_mora.gurobi;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
@@ -37,7 +38,7 @@ public class GurobiModule extends AbstractDvrpModeQSimModule {
 
 			GurobiAssignmentParameters solverParameters = (GurobiAssignmentParameters) amConfig.assignmentSolver;
 
-			return new GurobiAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
+			return new GurobiAssignmentSolver(getter.getModal(RejectionPenalty.class),
 					globalConfig.getNumberOfThreads(), solverParameters.timeLimit, solverParameters.optimalityGap);
 		})).in(Singleton.class);
 

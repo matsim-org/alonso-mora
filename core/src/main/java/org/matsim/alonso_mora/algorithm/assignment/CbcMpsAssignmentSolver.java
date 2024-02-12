@@ -30,8 +30,7 @@ public class CbcMpsAssignmentSolver implements AssignmentSolver {
 
 	private final static Logger logger = LogManager.getLogger(CbcMpsAssignmentSolver.class);
 
-	private final double rejectionPenalty;
-	private final double unassignmentPenalty;
+	private final RejectionPenalty rejectionPenalty;
 
 	private final File problemPath;
 	private final File solutionPath;
@@ -40,9 +39,8 @@ public class CbcMpsAssignmentSolver implements AssignmentSolver {
 	private final double optimalityGap;
 	private final long randomSeed;
 
-	public CbcMpsAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, double timeLimit,
-			double optimalityGap, File problemPath, File solutionPath, long randomSeed) {
-		this.unassignmentPenalty = unassignmentPenalty;
+	public CbcMpsAssignmentSolver(RejectionPenalty rejectionPenalty, double timeLimit, double optimalityGap,
+			File problemPath, File solutionPath, long randomSeed) {
 		this.rejectionPenalty = rejectionPenalty;
 
 		this.problemPath = problemPath;
@@ -58,7 +56,7 @@ public class CbcMpsAssignmentSolver implements AssignmentSolver {
 	public Solution solve(Stream<AlonsoMoraTrip> candidates) {
 		try {
 			List<AlonsoMoraTrip> tripList = candidates.collect(Collectors.toList());
-			new MpsAssignmentWriter(tripList, unassignmentPenalty, rejectionPenalty).write(problemPath);
+			new MpsAssignmentWriter(tripList, rejectionPenalty).write(problemPath);
 
 			new ProcessBuilder("cbc", problemPath.toString(), "-randomSeed", String.valueOf(randomSeed),
 					"-randomCbcSeed", String.valueOf(randomSeed), "-ratio", String.valueOf(optimalityGap), "-seconds",

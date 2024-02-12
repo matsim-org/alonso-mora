@@ -13,6 +13,8 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.DefaultRejectionPenalty;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction.Result;
 import org.matsim.api.core.v01.Id;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
@@ -52,7 +54,8 @@ public class CplexAssignmentSolverTest {
 
 	@Test
 	public void testOneVehicleOneRequestExample() {
-		AssignmentSolver solver = new CplexAssignmentSolver(9000.0, 9000.0, 1000, 10.0, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new CplexAssignmentSolver(rejectionPenalty, 1000, 10.0, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle(0);
 		AlonsoMoraRequest request = mockRequest();
@@ -67,7 +70,8 @@ public class CplexAssignmentSolverTest {
 
 	@Test
 	public void testTwoIndependentRequests() {
-		AssignmentSolver solver = new CplexAssignmentSolver(9000.0, 9000.0, 1000, 10.0, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new CplexAssignmentSolver(rejectionPenalty, 1000, 10.0, 0.1);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle(1);
 		AlonsoMoraRequest request1 = mockRequest();
@@ -87,7 +91,8 @@ public class CplexAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicle() {
-		AssignmentSolver solver = new CplexAssignmentSolver(9000.0, 9000.0, 1000, 10.0, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new CplexAssignmentSolver(rejectionPenalty, 1000, 10.0, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle(0);
 		AlonsoMoraRequest request1 = mockRequest();
@@ -111,7 +116,8 @@ public class CplexAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicleLowPenalty() {
-		AssignmentSolver solver = new CplexAssignmentSolver(250.0, 250.0, 1000, 10.0, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(250.0, 250.0);
+		AssignmentSolver solver = new CplexAssignmentSolver(rejectionPenalty, 1000, 10.0, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle(0);
 		AlonsoMoraRequest request1 = mockRequest();

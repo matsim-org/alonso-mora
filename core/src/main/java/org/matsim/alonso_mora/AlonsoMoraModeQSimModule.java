@@ -20,6 +20,8 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicleFactory;
 import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraRequestFactory;
 import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.DefaultRejectionPenalty;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.assignment.CbcMpsAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.GlpkMpsAssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.GreedyTripFirstSolver;
@@ -122,6 +124,9 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			return new GreedyVehicleFirstSolver();
 		})).in(Singleton.class);
 
+		bindModal(RejectionPenalty.class)
+				.toInstance(new DefaultRejectionPenalty(amConfig.unassignmentPenalty, amConfig.rejectionPenalty));
+
 		bindModal(CbcMpsAssignmentSolver.class).toProvider(modalProvider(getter -> {
 			if (!CbcMpsAssignmentSolver.checkAvailability()) {
 				throw new IllegalStateException("Cbc solver is not available on this system!");
@@ -133,9 +138,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 
 			CbcMpsAssignmentParameters solverParameters = (CbcMpsAssignmentParameters) amConfig.assignmentSolver;
 
-			return new CbcMpsAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
-					solverParameters.timeLimit, solverParameters.optimalityGap, problemPath, solutionPath,
-					getConfig().global().getRandomSeed());
+			return new CbcMpsAssignmentSolver(getter.getModal(RejectionPenalty.class), solverParameters.timeLimit,
+					solverParameters.optimalityGap, problemPath, solutionPath, getConfig().global().getRandomSeed());
 		})).in(Singleton.class);
 
 		bindModal(GlpkMpsAssignmentSolver.class).toProvider(modalProvider(getter -> {
@@ -149,8 +153,8 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 
 			GlpkMpsAssignmentParameters solverParameters = (GlpkMpsAssignmentParameters) amConfig.assignmentSolver;
 
-			return new GlpkMpsAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
-					solverParameters.timeLimit, solverParameters.optimalityGap, problemPath, solutionPath);
+			return new GlpkMpsAssignmentSolver(getter.getModal(RejectionPenalty.class), solverParameters.timeLimit,
+					solverParameters.optimalityGap, problemPath, solutionPath);
 		})).in(Singleton.class);
 
 		switch (amConfig.assignmentSolver.getSolverType()) {

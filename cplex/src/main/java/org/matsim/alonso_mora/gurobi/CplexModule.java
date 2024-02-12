@@ -3,6 +3,7 @@ package org.matsim.alonso_mora.gurobi;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
@@ -37,8 +38,8 @@ public class CplexModule extends AbstractDvrpModeQSimModule {
 
 			CplexAssignmentParameters solverParameters = (CplexAssignmentParameters) amConfig.assignmentSolver;
 
-			return new CplexAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
-					globalConfig.getNumberOfThreads(), solverParameters.timeLimit, solverParameters.optimalityGap);
+			return new CplexAssignmentSolver(getter.getModal(RejectionPenalty.class), globalConfig.getNumberOfThreads(),
+					solverParameters.timeLimit, solverParameters.optimalityGap);
 		})).in(Singleton.class);
 
 		if (amConfig.assignmentSolver.getSolverType().equals(CplexAssignmentSolver.TYPE)) {
