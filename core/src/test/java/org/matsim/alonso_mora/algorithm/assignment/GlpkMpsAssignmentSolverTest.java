@@ -15,6 +15,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.DefaultRejectionPenalty;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction.Result;
 import org.mockito.Mockito;
 
@@ -49,9 +51,9 @@ public class GlpkMpsAssignmentSolverTest {
 	public void testOneVehicleOneRequestExample(@TempDir File temporaryFolder) throws IOException {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "solution");
-		
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				problemFile, solutionFile);
+
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -68,9 +70,9 @@ public class GlpkMpsAssignmentSolverTest {
 	public void testTwoIndependentRequests(@TempDir File temporaryFolder) throws IOException {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "solution");
-		
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				problemFile, solutionFile);
+
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -92,9 +94,9 @@ public class GlpkMpsAssignmentSolverTest {
 	public void testTwoRequestsWithOneVehicle(@TempDir File temporaryFolder) throws IOException {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "solution");
-		
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1,
-				problemFile, solutionFile);
+
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -120,9 +122,9 @@ public class GlpkMpsAssignmentSolverTest {
 	public void testTwoRequestsWithOneVehicleLowPenalty(@TempDir File temporaryFolder) throws IOException {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "solution");
-		
-		AssignmentSolver solver = new GlpkMpsAssignmentSolver(250.0, 250.0, 1000, 0.1,
-				problemFile, solutionFile);
+
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(250.0, 250.0);
+		AssignmentSolver solver = new GlpkMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();

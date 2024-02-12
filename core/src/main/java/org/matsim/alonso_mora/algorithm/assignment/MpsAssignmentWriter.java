@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 
 /**
  * Writes the assignment problem from Alonso-Mora et al. in MPS format which can
@@ -23,13 +24,11 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 public class MpsAssignmentWriter {
 	private final List<AlonsoMoraTrip> tripList;
 
-	private final double unassignmentPenalty;
-	private final double rejectionPenalty;
+	private final RejectionPenalty rejectionPenalty;
 
-	public MpsAssignmentWriter(List<AlonsoMoraTrip> tripList, double unassignmentPenalty, double rejectionPenalty) {
+	public MpsAssignmentWriter(List<AlonsoMoraTrip> tripList, RejectionPenalty rejectionPenalty) {
 		this.tripList = tripList;
 		this.rejectionPenalty = rejectionPenalty;
-		this.unassignmentPenalty = unassignmentPenalty;
 	}
 
 	public void write(File path) throws IOException {
@@ -83,7 +82,7 @@ public class MpsAssignmentWriter {
 
 		// Request influences
 		for (int i = 0; i < numberOfRequests; i++) {
-			double penalty = requestList.get(i).isAssigned() ? unassignmentPenalty : rejectionPenalty;
+			double penalty = rejectionPenalty.getPenalty(requestList.get(i));
 			writer.write(String.format(Locale.US, " x%d R%07d %f R%07d 1\n", i, 0, penalty, i + numberOfVehicles + 1));
 		}
 

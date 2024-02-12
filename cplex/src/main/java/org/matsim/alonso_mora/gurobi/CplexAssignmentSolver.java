@@ -34,16 +34,14 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 
 	private static final Logger logger = LogManager.getLogger(CplexAssignmentSolver.class);
 
-	private final double unassignmentPenalty;
-	private final double rejectionPenalty;
+	private final RejectionPenalty rejectionPenalty;
 
 	private final int numberOfThreads;
 	private final double timeLimit;
 	private final double optimalityGap;
 
-	public CplexAssignmentSolver(double unassignmentPenalty, double rejectionPenalty, int numberOfThreads,
-			double timeLimit, double optimalityGap) {
-		this.unassignmentPenalty = unassignmentPenalty;
+	public CplexAssignmentSolver(RejectionPenalty rejectionPenalty, int numberOfThreads, double timeLimit,
+			double optimalityGap) {
 		this.rejectionPenalty = rejectionPenalty;
 		this.numberOfThreads = numberOfThreads;
 		this.timeLimit = timeLimit;
@@ -129,7 +127,7 @@ public class CplexAssignmentSolver implements AssignmentSolver {
 
 			for (int k = 0; k < requestVariables.size(); k++) {
 				AlonsoMoraRequest request = requestList.get(k);
-				double penalty = request.isAssigned() ? unassignmentPenalty : rejectionPenalty;
+				double penalty = rejectionPenalty.getPenalty(request);
 				objective.addTerm(penalty, requestVariables.get(k));
 			}
 

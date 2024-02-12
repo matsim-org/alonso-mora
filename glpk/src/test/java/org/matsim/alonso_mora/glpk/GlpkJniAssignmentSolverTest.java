@@ -13,6 +13,8 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.DefaultRejectionPenalty;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction.Result;
 import org.mockito.Mockito;
 
@@ -45,7 +47,8 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testOneVehicleOneRequestExample() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(rejectionPenalty, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -60,7 +63,8 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testTwoIndependentRequests() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(rejectionPenalty, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -80,7 +84,8 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicle() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(9000.0, 9000.0, 1000, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(rejectionPenalty, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -104,7 +109,8 @@ public class GlpkJniAssignmentSolverTest {
 
 	@Test
 	public void testTwoRequestsWithOneVehicleLowPenalty() {
-		AssignmentSolver solver = new GlpkJniAssignmentSolver(250.0, 250.0, 1000, 0.1);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(250.0, 250.0);
+		AssignmentSolver solver = new GlpkJniAssignmentSolver(rejectionPenalty, 1000, 0.1);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();

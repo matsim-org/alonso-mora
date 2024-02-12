@@ -15,6 +15,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.DefaultRejectionPenalty;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.function.AlonsoMoraFunction.Result;
 import org.mockito.Mockito;
 
@@ -50,7 +52,8 @@ public class CbcMpsAssignmentSolverTest {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "problem");
 
-		AssignmentSolver solver = new CbcMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1, problemFile, solutionFile, 0);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new CbcMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile, 0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request = mockRequest();
@@ -68,7 +71,8 @@ public class CbcMpsAssignmentSolverTest {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "problem");
 
-		AssignmentSolver solver = new CbcMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1, problemFile, solutionFile, 0);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new CbcMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile, 0);
 
 		AlonsoMoraVehicle vehicle1 = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -91,7 +95,8 @@ public class CbcMpsAssignmentSolverTest {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "problem");
 
-		AssignmentSolver solver = new CbcMpsAssignmentSolver(9000.0, 9000.0, 1000, 0.1, problemFile, solutionFile, 0);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(9000.0, 9000.0);
+		AssignmentSolver solver = new CbcMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile, 0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();
@@ -118,7 +123,8 @@ public class CbcMpsAssignmentSolverTest {
 		File problemFile = new File(temporaryFolder, "problem");
 		File solutionFile = new File(temporaryFolder, "problem");
 
-		AssignmentSolver solver = new CbcMpsAssignmentSolver(250.0, 250.0, 1000, 0.1, problemFile, solutionFile, 0);
+		RejectionPenalty rejectionPenalty = new DefaultRejectionPenalty(250.0, 250.0);
+		AssignmentSolver solver = new CbcMpsAssignmentSolver(rejectionPenalty, 1000, 0.1, problemFile, solutionFile, 0);
 
 		AlonsoMoraVehicle vehicle = mockVehicle();
 		AlonsoMoraRequest request1 = mockRequest();

@@ -3,6 +3,7 @@ package org.matsim.alonso_mora.algorithm.assignment;
 import java.util.Collection;
 import java.util.stream.Stream;
 
+import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraTrip;
 
 /**
@@ -24,6 +25,25 @@ public interface AssignmentSolver {
 		public Solution(Status status, Collection<AlonsoMoraTrip> trips) {
 			this.status = status;
 			this.trips = trips;
+		}
+	}
+
+	static public interface RejectionPenalty {
+		double getPenalty(AlonsoMoraRequest request);
+	}
+
+	static public class DefaultRejectionPenalty implements RejectionPenalty {
+		private final double unassignmentPenalty;
+		private final double rejectionPenalty;
+
+		public DefaultRejectionPenalty(double unassignmentPenalty, double rejectionPenalty) {
+			this.unassignmentPenalty = unassignmentPenalty;
+			this.rejectionPenalty = rejectionPenalty;
+		}
+
+		@Override
+		public double getPenalty(AlonsoMoraRequest request) {
+			return request.isAssigned() ? unassignmentPenalty : rejectionPenalty;
 		}
 	}
 }

@@ -3,6 +3,7 @@ package org.matsim.alonso_mora.glpk;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
+import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
 import org.matsim.alonso_mora.algorithm.relocation.RelocationSolver;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
@@ -38,8 +39,8 @@ public class GlpkModule extends AbstractDvrpModeQSimModule {
 
 			GlpkJniAssignmentParameters solverParameters = (GlpkJniAssignmentParameters) amConfig.assignmentSolver;
 
-			return new GlpkJniAssignmentSolver(amConfig.unassignmentPenalty, amConfig.rejectionPenalty,
-					solverParameters.timeLimit, solverParameters.optimalityGap);
+			return new GlpkJniAssignmentSolver(getter.getModal(RejectionPenalty.class), solverParameters.timeLimit,
+					solverParameters.optimalityGap);
 		})).in(Singleton.class);
 
 		if (amConfig.assignmentSolver.getSolverType().equals(GlpkJniAssignmentSolver.TYPE)) {
