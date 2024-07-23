@@ -15,7 +15,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftBreakTask;
 import org.matsim.contrib.drt.extension.operations.shifts.schedule.ShiftChangeOverTask;
-import org.matsim.contrib.drt.extension.operations.shifts.schedule.WaitForShiftStayTask;
+import org.matsim.contrib.drt.extension.operations.shifts.schedule.WaitForShiftTask;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.schedule.DrtDriveTask;
 import org.matsim.contrib.drt.schedule.DrtStayTask;
@@ -497,7 +497,7 @@ public class ShiftAlonsoMoraScheduler implements AlonsoMoraScheduler {
 
 		if (currentTask instanceof DrtStayTask) {
 			currentTask.setEndTime(Math.max(currentTask.getEndTime(), vehicle.getVehicle().getServiceEndTime()));
-		} else if (currentTask instanceof WaitForShiftStayTask) {
+		} else if (currentTask instanceof WaitForShiftTask) {
 			if (currentTask.getEndTime() == now) {
 				// if the shift just started, re-create the stay task
 				StayTask stayTask = taskFactory.createStayTask(dvrpVehicle, currentTask.getEndTime(),
