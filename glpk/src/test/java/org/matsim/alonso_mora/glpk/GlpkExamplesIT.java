@@ -19,53 +19,18 @@
 
 package org.matsim.alonso_mora.glpk;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.AlonsoMoraConfigurator;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
-import org.matsim.alonso_mora.shifts.ShiftAlonsoMoraModule;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.contrib.drt.extension.operations.DrtOperationsParams;
-import org.matsim.contrib.drt.extension.operations.DrtWithOperationsConfigGroup;
-import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesParams;
-import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesQSimModule;
-import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesSpecification;
-import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesSpecificationImpl;
-import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacility;
-import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitySpecificationImpl;
-import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilityType;
-import org.matsim.contrib.drt.extension.operations.shifts.config.ShiftsParams;
-import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDrtModeModule;
-import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDrtModeOptimizerQSimModule;
-import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDvrpFleetQsimModule;
-import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShift;
-import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftBreakSpecificationImpl;
-import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftSpecificationImpl;
-import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecification;
-import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecificationImpl;
 import org.matsim.contrib.drt.routing.DrtRoute;
 import org.matsim.contrib.drt.routing.DrtRouteFactory;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
-import org.matsim.contrib.drt.run.DrtModeQSimModule;
 import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
 import org.matsim.contrib.drt.run.MultiModeDrtModule;
-import org.matsim.contrib.dvrp.run.AbstractDvrpModeModule;
 import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
 import org.matsim.contrib.dvrp.run.DvrpModule;
 import org.matsim.contrib.dvrp.run.DvrpQSimComponents;
@@ -78,6 +43,17 @@ import org.matsim.core.utils.io.IOUtils;
 import org.matsim.examples.ExamplesUtils;
 import org.matsim.testcases.MatsimTestUtils;
 import org.matsim.vis.otfvis.OTFVisConfigGroup;
+
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author sebhoerl
