@@ -19,6 +19,8 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.contrib.drt.optimizer.constraints.DefaultDrtOptimizationConstraintsSet;
+import org.matsim.contrib.drt.optimizer.constraints.DrtOptimizationConstraintsSet;
 import org.matsim.contrib.drt.optimizer.insertion.extensive.ExtensiveInsertionSearchParams;
 import org.matsim.contrib.drt.routing.DrtRoute;
 import org.matsim.contrib.drt.routing.DrtRouteFactory;
@@ -43,10 +45,9 @@ import org.matsim.core.config.groups.ScoringConfigGroup.ModeParams;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.scenario.ScenarioUtils;
-import org.opengis.referencing.FactoryException;
 
 public class RunNewYork {
-	static public void main(String[] args) throws CommandLine.ConfigurationException, FactoryException {
+	static public void main(String[] args) throws CommandLine.ConfigurationException {
 		CommandLine cmd = new CommandLine.Builder(args).requireOptions( //
 				"demand-path", "network-path", "output-path", //
 				"use-alonso-mora" //
@@ -204,15 +205,21 @@ public class RunNewYork {
 
 		DrtConfigGroup modeConfig = new DrtConfigGroup();
 		modeConfig.mode = TransportMode.drt;
-		modeConfig.maxTravelTimeAlpha = detourFactor;
-		modeConfig.maxTravelTimeBeta = stopDuration;
-		modeConfig.maxWaitTime = maximumWaitingTime + stopDuration;
-		modeConfig.rejectRequestIfMaxWaitOrTravelTimeViolated = true;
+
+		DefaultDrtOptimizationConstraintsSet constraintsSet =
+				(DefaultDrtOptimizationConstraintsSet) modeConfig
+				.addOrGetDrtOptimizationConstraintsParams()
+				.addOrGetDefaultDrtOptimizationConstraintsSet();
+		constraintsSet.maxTravelTimeAlpha = detourFactor;
+		constraintsSet.maxTravelTimeBeta = stopDuration;
+		constraintsSet.maxWaitTime = maximumWaitingTime + stopDuration;
+		constraintsSet.rejectRequestIfMaxWaitOrTravelTimeViolated = true;
+		constraintsSet.maxWalkDistance = 1000.0;
+
 		modeConfig.useModeFilteredSubnetwork = false;
 		modeConfig.idleVehiclesReturnToDepots = false;
 		modeConfig.operationalScheme = DrtConfigGroup.OperationalScheme.door2door;
 		modeConfig.plotDetailedCustomerStats = true;
-		modeConfig.maxWalkDistance = 1000.0;
 		modeConfig.numberOfThreads = threads;
 
 		modeConfig.addParameterSet(new ExtensiveInsertionSearchParams());

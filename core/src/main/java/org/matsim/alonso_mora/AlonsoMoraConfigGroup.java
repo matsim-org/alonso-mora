@@ -16,9 +16,9 @@ import org.matsim.alonso_mora.travel_time.EuclideanTravelTimeEstimator;
 import org.matsim.alonso_mora.travel_time.HybridTravelTimeEstimator;
 import org.matsim.alonso_mora.travel_time.MatrixTravelTimeEstimator;
 import org.matsim.alonso_mora.travel_time.RoutingTravelTimeEstimator;
+import org.matsim.contrib.common.util.ReflectiveConfigGroupWithConfigurableParameterSets;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
-import org.matsim.contrib.util.ReflectiveConfigGroupWithConfigurableParameterSets;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ReflectiveConfigGroup;
 

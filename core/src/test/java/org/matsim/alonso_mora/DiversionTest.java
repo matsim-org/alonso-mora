@@ -303,7 +303,7 @@ public class DiversionTest {
 				};
 			}));
 
-			bindModal(VehicleType.class).toInstance(VehicleUtils.getDefaultVehicleType());
+			bindModal(VehicleType.class).toInstance(VehicleUtils.createDefaultVehicleType());
 		}
 	}
 
@@ -537,7 +537,7 @@ public class DiversionTest {
 							testTracker);
 				})).in(Singleton.class);
 
-				bindModal(VehicleType.class).toInstance(VehicleUtils.getDefaultVehicleType());
+				bindModal(VehicleType.class).toInstance(VehicleUtils.createDefaultVehicleType());
 			}
 		});
 

@@ -43,8 +43,9 @@ import org.matsim.alonso_mora.shifts.ShiftAlonsoMoraModule;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.common.zones.systems.grid.square.SquareGridZoneSystemParams;
+import org.matsim.contrib.drt.extension.DrtWithExtensionsConfigGroup;
 import org.matsim.contrib.drt.extension.operations.DrtOperationsParams;
-import org.matsim.contrib.drt.extension.operations.DrtWithOperationsConfigGroup;
 import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesParams;
 import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesQSimModule;
 import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitiesSpecification;
@@ -95,7 +96,9 @@ public class AlonsoMoraExamplesIT {
 	public void testRunAlonsoMora() {
 		Id.resetCaches();
 		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
-		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), new DvrpConfigGroup(),
+		DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
+		dvrpConfigGroup.getTravelTimeMatrixParams().addParameterSet(new SquareGridZoneSystemParams());
+		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), dvrpConfigGroup,
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
@@ -139,7 +142,9 @@ public class AlonsoMoraExamplesIT {
 	public void testRunAlonsoMoraWithDeterministicTravelTimesCheck() {
 		Id.resetCaches();
 		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
-		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), new DvrpConfigGroup(),
+		DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
+		dvrpConfigGroup.getTravelTimeMatrixParams().addParameterSet(new SquareGridZoneSystemParams());
+		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), dvrpConfigGroup,
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
@@ -197,8 +202,10 @@ public class AlonsoMoraExamplesIT {
 	public void testRunAlonsoMoraWithShifts() {
 		Id.resetCaches();
 		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
+		DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
+		dvrpConfigGroup.getTravelTimeMatrixParams().addParameterSet(new SquareGridZoneSystemParams());
 		Config config = ConfigUtils.loadConfig(configUrl,
-				new MultiModeDrtConfigGroup(DrtWithOperationsConfigGroup::new), new DvrpConfigGroup(),
+				new MultiModeDrtConfigGroup(DrtWithExtensionsConfigGroup::new), dvrpConfigGroup,
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
@@ -208,7 +215,7 @@ public class AlonsoMoraExamplesIT {
 		config.controller().setOutputDirectory(utils.getOutputDirectory());
 
 		// Remove DRT rebalancer as we want to use AM rebalancer
-		DrtWithOperationsConfigGroup drtConfig = (DrtWithOperationsConfigGroup) MultiModeDrtConfigGroup.get(config)
+		DrtWithExtensionsConfigGroup drtConfig = (DrtWithExtensionsConfigGroup) MultiModeDrtConfigGroup.get(config)
 				.getModalElements().iterator().next();
 		drtConfig.removeParameterSet(drtConfig.getRebalancingParams().get());
 
@@ -431,7 +438,9 @@ public class AlonsoMoraExamplesIT {
 	public void testRunAlonsoMoraWithPrebooking() {
 		Id.resetCaches();
 		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
-		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), new DvrpConfigGroup(),
+		DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
+		dvrpConfigGroup.getTravelTimeMatrixParams().addParameterSet(new SquareGridZoneSystemParams());
+		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), dvrpConfigGroup,
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
