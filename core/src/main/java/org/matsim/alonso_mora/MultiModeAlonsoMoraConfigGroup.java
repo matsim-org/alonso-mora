@@ -8,7 +8,7 @@ import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ReflectiveConfigGroup;
 
 public class MultiModeAlonsoMoraConfigGroup extends ReflectiveConfigGroup {
-	public static final String GROUP_NAME = "multiModeAlonsoMora";
+	public static final String GROUP_NAME = "alonso_mora";
 
 	public MultiModeAlonsoMoraConfigGroup() {
 		super(GROUP_NAME);
