@@ -26,6 +26,7 @@ import org.matsim.alonso_mora.AlonsoMoraConfigurator;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.contrib.common.zones.systems.grid.square.SquareGridZoneSystemParams;
 import org.matsim.contrib.drt.routing.DrtRoute;
 import org.matsim.contrib.drt.routing.DrtRouteFactory;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
@@ -67,7 +68,9 @@ public class GlpkExamplesIT {
 	public void testRunAlonsoMoraWithGlpk() {
 		Id.resetCaches();
 		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
-		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), new DvrpConfigGroup(),
+		DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
+		dvrpConfigGroup.getTravelTimeMatrixParams().addParameterSet(new SquareGridZoneSystemParams());
+		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(), dvrpConfigGroup,
 				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
