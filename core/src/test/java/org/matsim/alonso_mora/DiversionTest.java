@@ -58,6 +58,7 @@ import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.mobsim.framework.MobsimTimer;
 import org.matsim.core.mobsim.framework.events.MobsimBeforeSimStepEvent;
 import org.matsim.core.mobsim.framework.listeners.MobsimBeforeSimStepListener;
+import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.router.DijkstraFactory;
 import org.matsim.core.router.costcalculators.OnlyTimeDependentTravelDisutility;
 import org.matsim.core.router.util.LeastCostPathCalculator;
@@ -166,6 +167,14 @@ public class DiversionTest {
 				link.setLength(1000.0);
 				network.addLink(link);
 			}
+			
+			Node fromNode = network.getNodes().get(Id.createNodeId("n9"));
+			Node toNode = network.getNodes().get(Id.createNodeId("n0"));
+			Link link = networkFactory.createLink(Id.createLinkId("return"), fromNode, toNode);
+			link.setFreespeed(1e-3);
+			link.setCapacity(1e9);
+			link.setLength(1e9);
+			network.addLink(link);
 		}
 
 		FleetSpecification fleetSpecification = new FleetSpecificationImpl();
@@ -492,6 +501,14 @@ public class DiversionTest {
 				link.setLength(1000.0);
 				network.addLink(link);
 			}
+			
+			Node fromNode = network.getNodes().get(Id.createNodeId("n10"));
+			Node toNode = network.getNodes().get(Id.createNodeId("n0"));
+			Link link = networkFactory.createLink(Id.createLinkId("return"), fromNode, toNode);
+			link.setFreespeed(1e-3);
+			link.setCapacity(1e9);
+			link.setLength(1e9);
+			network.addLink(link);
 		}
 
 		FleetSpecification fleetSpecification = new FleetSpecificationImpl();
