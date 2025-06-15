@@ -232,7 +232,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			Network network = getter.getModal(Network.class);
 			TravelTime travelTime = getter.getModal(TravelTime.class);
 
-			return new ParallelLeastCostPathCalculator(drtConfig.numberOfThreads, factory, network,
+			return new ParallelLeastCostPathCalculator(drtConfig.getNumberOfThreads(), factory, network,
 					new OnlyTimeDependentTravelDisutility(travelTime), travelTime);
 		}));
 
@@ -332,7 +332,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			CongestionMitigationParameters congestionParameters = amConfig.congestionMitigation;
 
 			return new DefaultAlonsoMoraFunction(travelTimeEstimator, sequenceGeneratorFactory, stopDurationProvider,
-					drtConfig.stopDuration, congestionParameters.allowPickupViolations,
+					drtConfig.getStopDuration(), congestionParameters.allowPickupViolations,
 					congestionParameters.allowPickupsWithDropoffViolations, amConfig.checkDeterminsticTravelTimes,
 					objective, constraint, amConfig.violationFactor, amConfig.violationOffset,
 					amConfig.preferNonViolation);
@@ -356,7 +356,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
 			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
 
-			return new DefaultAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.stopDuration,
+			return new DefaultAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.getStopDuration(),
 					amConfig.checkDeterminsticTravelTimes, amConfig.rerouteDuringScheduling, travelTime, network,
 					endTimeCalculator, router, operationalVoter);
 		}));
@@ -367,7 +367,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 			Double rebalancingInterval = null;
 
 			if (drtConfig.getRebalancingParams().isPresent()) {
-				rebalancingInterval = (double) drtConfig.getRebalancingParams().get().interval;
+				rebalancingInterval = (double) drtConfig.getRebalancingParams().get().getInterval();
 			}
 
 			return new StandardRebalancer( //
@@ -403,7 +403,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(PassengerStopDurationProvider.class), //
 					new AlgorithmSettings(amConfig), //
 					getter.getModal(DrtOfferAcceptor.class), //
-					drtConfig.stopDuration);
+					drtConfig.getStopDuration());
 		}));
 
 		bindModal(AlonsoMoraVehicleFactory.class).toInstance(vehicle -> new DefaultAlonsoMoraVehicle(vehicle));

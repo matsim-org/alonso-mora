@@ -168,7 +168,7 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 
 	@Override
 	public int getSize() {
-		return drtRequest.getPassengerCount();
+		return drtRequest.getPassengerIds().size();
 	}
 
 	@Override

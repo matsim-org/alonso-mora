@@ -74,7 +74,7 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
 			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
 			
-			return new ShiftAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.stopDuration,
+			return new ShiftAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.getStopDuration(),
 					amConfig.checkDeterminsticTravelTimes, amConfig.rerouteDuringScheduling, travelTime, network,
 					endTimeCalculator, router, operationalVoter);
 		}));
