@@ -87,7 +87,7 @@ import org.matsim.vis.otfvis.OTFVisConfigGroup;
 /**
  * @author sebhoerl
  */
-public class AlonsoMoraExamplesIT {
+public class AlonsoMoraExamplesTest {
 
 	@RegisterExtension
 	private MatsimTestUtils utils = new MatsimTestUtils();
