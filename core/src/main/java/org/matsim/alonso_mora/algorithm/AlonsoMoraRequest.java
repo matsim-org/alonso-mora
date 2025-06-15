@@ -36,8 +36,6 @@ public interface AlonsoMoraRequest extends Comparable<AlonsoMoraRequest> {
 
 	AcceptedDrtRequest getAcceptedDrtRequest();
 
-	public int getSize();
-
 	boolean isAssigned();
 
 	public Link getPickupLink();
@@ -59,4 +57,6 @@ public interface AlonsoMoraRequest extends Comparable<AlonsoMoraRequest> {
 	public double getEarliestPickupTime();
 
 	public void accept(AcceptedDrtRequest acceptedRequest);
+
+	public int getItems();
 }

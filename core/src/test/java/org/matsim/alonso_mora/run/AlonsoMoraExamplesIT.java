@@ -498,9 +498,9 @@ public class AlonsoMoraExamplesIT {
 		var expectedStats = Stats.newBuilder() //
 				.rejectionRate(0.03) //
 				.rejections(11) //
-				.waitAverage(204.48) //
-				.inVehicleTravelTimeMean(345.55) //
-				.totalTravelTimeMean(550.03) //
+				.waitAverage(203.42) //
+				.inVehicleTravelTimeMean(346.95) //
+				.totalTravelTimeMean(550.37) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);

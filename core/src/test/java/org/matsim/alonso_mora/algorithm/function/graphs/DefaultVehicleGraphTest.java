@@ -23,7 +23,6 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
-import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.core.utils.collections.Tuple;
 import org.mockito.Mockito;
 
@@ -405,7 +404,7 @@ public class DefaultVehicleGraphTest {
 		}
 
 		@Override
-		public int getSize() {
+		public int getItems() {
 			// TODO Auto-generated method stub
 			return 0;
 		}
@@ -472,11 +471,8 @@ public class DefaultVehicleGraphTest {
 	}
 
 	private AlonsoMoraVehicle mockVehicle() {
-		DvrpVehicle dvrpVehicle = Mockito.mock(DvrpVehicle.class);
-		Mockito.when(dvrpVehicle.getCapacity()).thenReturn(4);
-
 		AlonsoMoraVehicle vehicle = Mockito.mock(AlonsoMoraVehicle.class);
-		Mockito.when(vehicle.getVehicle()).thenReturn(dvrpVehicle);
+		Mockito.when(vehicle.getItemCapacity()).thenReturn(4);
 
 		return vehicle;
 	}

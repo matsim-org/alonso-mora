@@ -12,8 +12,8 @@ import org.matsim.contrib.dvrp.util.LinkTimePair;
 public class ShiftAlonsoMoraVehicle extends DefaultAlonsoMoraVehicle {
 	private final DvrpVehicle vehicle;
 
-	public ShiftAlonsoMoraVehicle(DvrpVehicle vehicle) {
-		super(vehicle);
+	public ShiftAlonsoMoraVehicle(DvrpVehicle vehicle, int itemCapacity) {
+		super(vehicle, itemCapacity);
 		this.vehicle = vehicle;
 	}
 

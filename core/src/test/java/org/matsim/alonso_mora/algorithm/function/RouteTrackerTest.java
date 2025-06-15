@@ -12,7 +12,10 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop.StopType;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.stops.StaticPassengerStopDurationProvider;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
+import org.matsim.contrib.dvrp.load.IntegerLoad;
 import org.mockito.Mockito;
 
 public class RouteTrackerTest {
@@ -28,10 +31,10 @@ public class RouteTrackerTest {
 		Mockito.when(estimator.estimateTravelTime(Mockito.eq(linkA), Mockito.eq(linkA), Mockito.anyDouble(),
 				Mockito.anyDouble())).thenReturn(0.0);
 
-		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request.getSize()).thenReturn(1);
+		AlonsoMoraRequest request = mockRequest();
+		DvrpLoad initialLoad = IntegerLoad.fromValue(3);
 
-		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 3, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, initialLoad, 7000.0, Optional.empty());
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request));
@@ -44,8 +47,8 @@ public class RouteTrackerTest {
 		assertEquals(7105.0, tracker.getArrivalTime(1), 1e-3);
 		assertEquals(7110.0, tracker.getDepartureTime(1), 1e-3);
 
-		assertEquals(4, tracker.getOccupancyAfter(0));
-		assertEquals(3, tracker.getOccupancyAfter(1));
+		assertEquals(4, tracker.getOccupancyAfter(0).getElement(0));
+		assertEquals(3, tracker.getOccupancyAfter(1).getElement(0));
 	}
 
 	@Test
@@ -63,10 +66,10 @@ public class RouteTrackerTest {
 		Mockito.when(estimator.estimateTravelTime(Mockito.eq(linkVehicle), Mockito.eq(linkA), Mockito.anyDouble(),
 				Mockito.anyDouble())).thenReturn(100.0);
 
-		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request.getSize()).thenReturn(1);
+		AlonsoMoraRequest request = mockRequest();
+		DvrpLoad initialLoad = IntegerLoad.fromValue(3);
 
-		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 3, 7000.0, Optional.of(linkVehicle));
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, initialLoad, 7000.0, Optional.of(linkVehicle));
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request));
@@ -79,8 +82,8 @@ public class RouteTrackerTest {
 		assertEquals(7105.0 + 100.0, tracker.getArrivalTime(1), 1e-3);
 		assertEquals(7110.0 + 100.0, tracker.getDepartureTime(1), 1e-3);
 
-		assertEquals(4, tracker.getOccupancyAfter(0));
-		assertEquals(3, tracker.getOccupancyAfter(1));
+		assertEquals(4, tracker.getOccupancyAfter(0).getElement(0));
+		assertEquals(3, tracker.getOccupancyAfter(1).getElement(0));
 	}
 
 	@Test
@@ -93,10 +96,10 @@ public class RouteTrackerTest {
 				estimator.estimateTravelTime(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.anyDouble()))
 				.thenReturn(100.0);
 
-		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request.getSize()).thenReturn(1);
+		AlonsoMoraRequest request = mockRequest();
+		DvrpLoad initialLoad = IntegerLoad.fromValue(0);
 
-		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, initialLoad, 7000.0, Optional.empty());
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request));
@@ -126,12 +129,12 @@ public class RouteTrackerTest {
 		assertEquals(7625.0, tracker.getArrivalTime(5), 1e-3);
 		assertEquals(7630.0, tracker.getDepartureTime(5), 1e-3);
 
-		assertEquals(1, tracker.getOccupancyAfter(0));
-		assertEquals(2, tracker.getOccupancyAfter(1));
-		assertEquals(1, tracker.getOccupancyAfter(2));
-		assertEquals(0, tracker.getOccupancyAfter(3));
-		assertEquals(1, tracker.getOccupancyAfter(4));
-		assertEquals(0, tracker.getOccupancyAfter(5));
+		assertEquals(1, tracker.getOccupancyAfter(0).getElement(0));
+		assertEquals(2, tracker.getOccupancyAfter(1).getElement(0));
+		assertEquals(1, tracker.getOccupancyAfter(2).getElement(0));
+		assertEquals(0, tracker.getOccupancyAfter(3).getElement(0));
+		assertEquals(1, tracker.getOccupancyAfter(4).getElement(0));
+		assertEquals(0, tracker.getOccupancyAfter(5).getElement(0));
 	}
 
 	@Test
@@ -144,16 +147,12 @@ public class RouteTrackerTest {
 				estimator.estimateTravelTime(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.anyDouble()))
 				.thenReturn(100.0);
 
-		AlonsoMoraRequest request1 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request1.getSize()).thenReturn(2);
+		AlonsoMoraRequest request1 = mockRequest(2);
+		AlonsoMoraRequest request2 = mockRequest(1);
+		AlonsoMoraRequest request3 = mockRequest(3);
+		DvrpLoad initialLoad = IntegerLoad.fromValue(0);
 
-		AlonsoMoraRequest request2 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request2.getSize()).thenReturn(1);
-
-		AlonsoMoraRequest request3 = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request3.getSize()).thenReturn(3);
-
-		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, initialLoad, 7000.0, Optional.empty());
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request1));
@@ -165,12 +164,12 @@ public class RouteTrackerTest {
 
 		tracker.update(initialStops);
 
-		assertEquals(2, tracker.getOccupancyAfter(0));
-		assertEquals(3, tracker.getOccupancyAfter(1));
-		assertEquals(2, tracker.getOccupancyAfter(2));
-		assertEquals(0, tracker.getOccupancyAfter(3));
-		assertEquals(3, tracker.getOccupancyAfter(4));
-		assertEquals(0, tracker.getOccupancyAfter(5));
+		assertEquals(2, tracker.getOccupancyAfter(0).getElement(0));
+		assertEquals(3, tracker.getOccupancyAfter(1).getElement(0));
+		assertEquals(2, tracker.getOccupancyAfter(2).getElement(0));
+		assertEquals(0, tracker.getOccupancyAfter(3).getElement(0));
+		assertEquals(3, tracker.getOccupancyAfter(4).getElement(0));
+		assertEquals(0, tracker.getOccupancyAfter(5).getElement(0));
 	}
 
 	@Test
@@ -183,10 +182,10 @@ public class RouteTrackerTest {
 				estimator.estimateTravelTime(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.anyDouble()))
 				.thenReturn(100.0);
 
-		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
+		DvrpLoad initialLoad = IntegerLoad.fromValue(0);
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, initialLoad, 7000.0, Optional.empty());
 
-		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request.getSize()).thenReturn(1);
+		AlonsoMoraRequest request = mockRequest(1);
 
 		List<AlonsoMoraStop> initialStops = new LinkedList<>();
 		initialStops.add(new AlonsoMoraStop(StopType.Pickup, linkA, request));
@@ -216,12 +215,12 @@ public class RouteTrackerTest {
 		assertEquals(7415.0, tracker.getArrivalTime(5), 1e-3);
 		assertEquals(7420.0, tracker.getDepartureTime(5), 1e-3);
 
-		assertEquals(1, tracker.getOccupancyAfter(0));
-		assertEquals(2, tracker.getOccupancyAfter(1));
-		assertEquals(1, tracker.getOccupancyAfter(2));
-		assertEquals(0, tracker.getOccupancyAfter(3));
-		assertEquals(1, tracker.getOccupancyAfter(4));
-		assertEquals(0, tracker.getOccupancyAfter(5));
+		assertEquals(1, tracker.getOccupancyAfter(0).getElement(0));
+		assertEquals(2, tracker.getOccupancyAfter(1).getElement(0));
+		assertEquals(1, tracker.getOccupancyAfter(2).getElement(0));
+		assertEquals(0, tracker.getOccupancyAfter(3).getElement(0));
+		assertEquals(1, tracker.getOccupancyAfter(4).getElement(0));
+		assertEquals(0, tracker.getOccupancyAfter(5).getElement(0));
 	}
 
 	@Test
@@ -240,10 +239,10 @@ public class RouteTrackerTest {
 		Mockito.when(estimator.estimateTravelTime(Mockito.eq(linkB), Mockito.eq(linkB), Mockito.anyDouble(),
 				Mockito.anyDouble())).thenReturn(0.0);
 
-		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, 0, 7000.0, Optional.empty());
+		DvrpLoad initialLoad = IntegerLoad.fromValue(0);
+		RouteTracker tracker = new RouteTracker(null, estimator, StaticPassengerStopDurationProvider.of(5.0, 0.0), 5.0, initialLoad, 7000.0, Optional.empty());
 
-		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
-		Mockito.when(request.getSize()).thenReturn(1);
+		AlonsoMoraRequest request = mockRequest();
 
 		{
 			List<AlonsoMoraStop> sequence = new LinkedList<>();
@@ -252,7 +251,7 @@ public class RouteTrackerTest {
 
 			assertEquals(7000.0, tracker.getArrivalTime(0), 1e-3);
 			assertEquals(7005.0, tracker.getDepartureTime(0), 1e-3);
-			assertEquals(1, tracker.getOccupancyAfter(0));
+			assertEquals(1, tracker.getOccupancyAfter(0).getElement(0));
 		}
 
 		{
@@ -263,11 +262,11 @@ public class RouteTrackerTest {
 
 			assertEquals(7000.0, tracker.getArrivalTime(0), 1e-3);
 			assertEquals(7005.0, tracker.getDepartureTime(0), 1e-3);
-			assertEquals(1, tracker.getOccupancyAfter(0));
+			assertEquals(1, tracker.getOccupancyAfter(0).getElement(0));
 
 			assertEquals(7105.0, tracker.getArrivalTime(1), 1e-3);
 			assertEquals(7110.0, tracker.getDepartureTime(1), 1e-3);
-			assertEquals(2, tracker.getOccupancyAfter(1));
+			assertEquals(2, tracker.getOccupancyAfter(1).getElement(0));
 		}
 
 		{
@@ -280,19 +279,19 @@ public class RouteTrackerTest {
 
 			assertEquals(7000.0, tracker.getArrivalTime(0), 1e-3);
 			assertEquals(7005.0, tracker.getDepartureTime(0), 1e-3);
-			assertEquals(1, tracker.getOccupancyAfter(0));
+			assertEquals(1, tracker.getOccupancyAfter(0).getElement(0));
 
 			assertEquals(7105.0, tracker.getArrivalTime(1), 1e-3);
 			assertEquals(7110.0, tracker.getDepartureTime(1), 1e-3);
-			assertEquals(2, tracker.getOccupancyAfter(1));
+			assertEquals(2, tracker.getOccupancyAfter(1).getElement(0));
 
 			assertEquals(7120.0, tracker.getArrivalTime(2), 1e-3);
 			assertEquals(7125.0, tracker.getDepartureTime(2), 1e-3);
-			assertEquals(1, tracker.getOccupancyAfter(2));
+			assertEquals(1, tracker.getOccupancyAfter(2).getElement(0));
 
 			assertEquals(7225.0, tracker.getArrivalTime(3), 1e-3);
 			assertEquals(7230.0, tracker.getDepartureTime(3), 1e-3);
-			assertEquals(0, tracker.getOccupancyAfter(3));
+			assertEquals(0, tracker.getOccupancyAfter(3).getElement(0));
 		}
 
 		{
@@ -303,11 +302,11 @@ public class RouteTrackerTest {
 
 			assertEquals(7000.0, tracker.getArrivalTime(0), 1e-3);
 			assertEquals(7005.0, tracker.getDepartureTime(0), 1e-3);
-			assertEquals(1, tracker.getOccupancyAfter(0));
+			assertEquals(1, tracker.getOccupancyAfter(0).getElement(0));
 
 			assertEquals(7000.0, tracker.getArrivalTime(1), 1e-3);
 			assertEquals(7005.0, tracker.getDepartureTime(1), 1e-3);
-			assertEquals(0, tracker.getOccupancyAfter(1));
+			assertEquals(0, tracker.getOccupancyAfter(1).getElement(0));
 		}
 
 		{
@@ -317,7 +316,21 @@ public class RouteTrackerTest {
 
 			assertEquals(7000.0, tracker.getArrivalTime(0), 1e-3);
 			assertEquals(7005.0, tracker.getDepartureTime(0), 1e-3);
-			assertEquals(1, tracker.getOccupancyAfter(0));
+			assertEquals(1, tracker.getOccupancyAfter(0).getElement(0));
 		}
+	}
+
+	private AlonsoMoraRequest mockRequest() {
+		return mockRequest(1);
+	}
+
+	private AlonsoMoraRequest mockRequest(int passengers) {
+		DrtRequest drtRequest = Mockito.mock(DrtRequest.class);
+		Mockito.when(drtRequest.getLoad()).thenReturn(IntegerLoad.fromValue(passengers));
+
+		AlonsoMoraRequest request = Mockito.mock(AlonsoMoraRequest.class);
+		Mockito.when(request.getDrtRequest()).thenReturn(drtRequest);
+
+		return request;
 	}
 }

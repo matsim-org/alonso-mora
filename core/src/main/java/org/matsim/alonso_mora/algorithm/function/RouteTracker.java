@@ -15,6 +15,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.schedule.DrtDriveTask;
 import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.schedule.DriveTask;
 
@@ -31,19 +32,19 @@ public class RouteTracker {
 	private final PassengerStopDurationProvider stopDurationProvider;
 	private final double vehicleStopDuration;
 
-	private final int initialOccupancy;
+	private final DvrpLoad initialOccupancy;
 	private final double initialDepartureTime;
 	private final Optional<Link> initialLink;
 
 	private final LinkedList<Double> departureTimes = new LinkedList<>();
 	private final LinkedList<Double> arrivalTimes = new LinkedList<>();
-	private final LinkedList<Integer> occupancies = new LinkedList<>();
+	private final LinkedList<DvrpLoad> occupancies = new LinkedList<>();
 
 	private final Map<AlonsoMoraRequest, Double> requiredPickupTimes;
 	private final Map<AlonsoMoraRequest, Double> requiredDropoffTimes;
 
 	public RouteTracker(AlonsoMoraVehicle vehicle, TravelTimeEstimator estimator,
-			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration, int initialOccupancy,
+			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration, DvrpLoad initialOccupancy,
 			double initialDepartureTime, Optional<Link> initialLink) {
 		this.estimator = estimator;
 		this.stopDurationProvider = stopDurationProvider;
@@ -58,7 +59,7 @@ public class RouteTracker {
 	}
 
 	public RouteTracker(AlonsoMoraVehicle vehicle, TravelTimeEstimator estimator,
-			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration, int initialOccupancy,
+			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration, DvrpLoad initialOccupancy,
 			double initialDepartureTime, Optional<Link> initialLink, Map<AlonsoMoraRequest, Double> requiredPickupTimes,
 			Map<AlonsoMoraRequest, Double> requiredDropoffTimes) {
 		this.estimator = estimator;
@@ -113,7 +114,7 @@ public class RouteTracker {
 		for (int i = partialIndex; i < stops.size(); i++) {
 			Link fromLink = null;
 			double departureTime = Double.NaN;
-			int occupancy = -1;
+			DvrpLoad occupancy = null;
 
 			if (i == 0) {
 				fromLink = initialLink.orElseGet(stops.get(0)::getLink);
@@ -225,9 +226,10 @@ public class RouteTracker {
 
 			if (stops.get(i).getType().equals(StopType.Relocation)) {
 				occupancies.add(occupancy);
+			} else if (stops.get(i).getType().equals(StopType.Pickup)) {
+				occupancies.add(occupancy.add(stops.get(i).getRequest().getDrtRequest().getLoad()));
 			} else {
-				occupancies.add(occupancy + (stops.get(i).getType().equals(StopType.Pickup) ? 1 : -1)
-						* stops.get(i).getRequest().getSize());
+				occupancies.add(occupancy.subtract(stops.get(i).getRequest().getDrtRequest().getLoad()));
 			}
 		}
 
@@ -276,11 +278,11 @@ public class RouteTracker {
 		return arrivalTimes.get(index);
 	}
 
-	public int getOccupancyAfter(int index) {
+	public DvrpLoad getOccupancyAfter(int index) {
 		return occupancies.get(index);
 	}
 
-	public int getOccupancyBefore(int index) {
+	public DvrpLoad getOccupancyBefore(int index) {
 		if (index == 0) {
 			return initialOccupancy;
 		} else {

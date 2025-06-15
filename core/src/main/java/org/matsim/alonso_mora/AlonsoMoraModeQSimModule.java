@@ -19,6 +19,8 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraRequestFactory;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicleFactory;
 import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraRequestFactory;
 import org.matsim.alonso_mora.algorithm.DefaultAlonsoMoraVehicle;
+import org.matsim.alonso_mora.algorithm.DefaultItemsProvider;
+import org.matsim.alonso_mora.algorithm.ItemsProvider;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.DefaultRejectionPenalty;
 import org.matsim.alonso_mora.algorithm.assignment.AssignmentSolver.RejectionPenalty;
@@ -69,6 +71,7 @@ import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
 import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.drt.stops.StopTimeCalculator;
 import org.matsim.contrib.dvrp.fleet.Fleet;
+import org.matsim.contrib.dvrp.load.DvrpLoadType;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater;
@@ -335,7 +338,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					drtConfig.getStopDuration(), congestionParameters.allowPickupViolations,
 					congestionParameters.allowPickupsWithDropoffViolations, amConfig.checkDeterminsticTravelTimes,
 					objective, constraint, amConfig.violationFactor, amConfig.violationOffset,
-					amConfig.preferNonViolation);
+					amConfig.preferNonViolation, getter.getModal(DvrpLoadType.class));
 		}));
 
 		bindModal(Objective.class).toProvider(() -> new MinimumDelay());
@@ -403,13 +406,20 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(PassengerStopDurationProvider.class), //
 					new AlgorithmSettings(amConfig), //
 					getter.getModal(DrtOfferAcceptor.class), //
-					drtConfig.getStopDuration());
+					drtConfig.getStopDuration(), //
+					getter.getModal(DvrpLoadType.class));
 		}));
 
-		bindModal(AlonsoMoraVehicleFactory.class).toInstance(vehicle -> new DefaultAlonsoMoraVehicle(vehicle));
+		bindModal(AlonsoMoraVehicleFactory.class).toProvider(modalProvider(getter -> {
+			ItemsProvider itemsProvider = getter.getModal(ItemsProvider.class);
+			return vehicle -> new DefaultAlonsoMoraVehicle(
+				vehicle, itemsProvider.getItems(vehicle.getCapacity()));
+		}));
 
 		bindModal(AlonsoMoraRequestFactory.class).toProvider(modalProvider(getter -> {
-			return new DefaultAlonsoMoraRequestFactory(amConfig.maximumQueueTime);
+			return new DefaultAlonsoMoraRequestFactory(amConfig.maximumQueueTime, //
+				getter.getModal(DvrpLoadType.class), //
+				getter.getModal(ItemsProvider.class));
 		}));
 
 		bindModal(AlonsoMoraOptimizer.class).toProvider(modalProvider(getter -> {
@@ -433,5 +443,11 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 
 		bindModal(AlonsoMoraUnscheduler.class).toInstance(new AlonsoMoraUnscheduler());
 		bindModal(RequestUnscheduler.class).to(modalKey(AlonsoMoraUnscheduler.class));
+
+		bindModal(DefaultItemsProvider.class).toProvider(modalProvider(getter -> {
+			return new DefaultItemsProvider(getter.getModal(DvrpLoadType.class));
+		})).in(Singleton.class);
+
+		bindModal(ItemsProvider.class).to(modalKey(DefaultItemsProvider.class));
 	}
 }

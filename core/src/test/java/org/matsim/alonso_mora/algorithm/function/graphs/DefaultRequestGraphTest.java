@@ -168,7 +168,7 @@ public class DefaultRequestGraphTest {
 		}
 
 		@Override
-		public int getSize() {
+		public int getItems() {
 			// TODO Auto-generated method stub
 			return 0;
 		}
