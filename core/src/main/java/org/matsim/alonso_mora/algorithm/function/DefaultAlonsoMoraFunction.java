@@ -19,7 +19,10 @@ import org.matsim.alonso_mora.algorithm.function.sequence.SequenceGenerator;
 import org.matsim.alonso_mora.algorithm.function.sequence.SequenceGeneratorFactory;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
+import org.matsim.contrib.dvrp.load.DvrpLoadType;
 import org.matsim.contrib.dvrp.util.LinkTimePair;
 
 import com.google.common.base.Verify;
@@ -48,11 +51,13 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 	private final double violationOffset;
 	private final boolean preferNonViolation;
 
+	private final DvrpLoad emptyLoad;
+
 	public DefaultAlonsoMoraFunction(TravelTimeEstimator travelTimeEstimator, SequenceGeneratorFactory generatorFactory,
 			PassengerStopDurationProvider stopDurationProvider, double vehicleStopDuration,
 			boolean allowPickupViolations, boolean allowPickupsWithDropoffViolations,
 			boolean checkDeterminsticTravelTimes, Objective objective, Constraint constraint, double violationFactor,
-			double violationOffset, boolean preferNonViolation) {
+			double violationOffset, boolean preferNonViolation, DvrpLoadType loadType) {
 		this.travelTimeEstimator = travelTimeEstimator;
 		this.vehicleStopDuration = vehicleStopDuration;
 		this.stopDurationProvider = stopDurationProvider;
@@ -68,6 +73,8 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 		this.violationFactor = violationFactor;
 		this.violationOffset = violationOffset;
 		this.preferNonViolation = preferNonViolation;
+
+		this.emptyLoad = loadType.getEmptyLoad();
 	}
 
 	/**
@@ -92,7 +99,7 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 		requiredDropoffTimes.put(firstRequest, firstRequest.getLatestDropoffTime());
 		requiredDropoffTimes.put(secondRequest, secondRequest.getLatestDropoffTime());
 
-		RouteTracker tracker = new RouteTracker(null, travelTimeEstimator, stopDurationProvider, vehicleStopDuration, 0,
+		RouteTracker tracker = new RouteTracker(null, travelTimeEstimator, stopDurationProvider, vehicleStopDuration, emptyLoad,
 				now, Optional.empty(), requiredPickupTimes, requiredDropoffTimes);
 
 		while (generator.hasNext()) {
@@ -105,26 +112,26 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 				AlonsoMoraStop stop = stops.get(i);
 
 				switch (stop.getType()) {
-				case Pickup:
-					double maximumPickupTime = stop.getRequest().getPlannedPickupTime();
-					double calculatedPickupTime = stop.getTime();
+					case Pickup:
+						double maximumPickupTime = stop.getRequest().getPlannedPickupTime();
+						double calculatedPickupTime = stop.getTime();
 
-					if (calculatedPickupTime > maximumPickupTime) {
-						isValid = false;
-					}
+						if (calculatedPickupTime > maximumPickupTime) {
+							isValid = false;
+						}
 
-					break;
-				case Dropoff:
-					double maximumDropoffTime = stop.getRequest().getLatestDropoffTime();
-					double calculatedDropoffTime = stop.getTime();
+						break;
+					case Dropoff:
+						double maximumDropoffTime = stop.getRequest().getLatestDropoffTime();
+						double calculatedDropoffTime = stop.getTime();
 
-					if (calculatedDropoffTime > maximumDropoffTime) {
-						isValid = false;
-					}
+						if (calculatedDropoffTime > maximumDropoffTime) {
+							isValid = false;
+						}
 
-					break;
-				default:
-					throw new IllegalStateException();
+						break;
+					default:
+						throw new IllegalStateException();
 				}
 			}
 
@@ -210,8 +217,13 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 		SequenceGenerator generator = generatorFactory.createGenerator(vehicle, onboardRequests, requests, now);
 
 		// Set up the timing and occupancy tracker
+		DvrpLoad startLoad = onboardRequests.stream() //
+				.map(AlonsoMoraRequest::getDrtRequest) //
+				.map(DrtRequest::getLoad) //
+				.reduce(emptyLoad, DvrpLoad::add);
+
 		RouteTracker tracker = new RouteTracker(vehicle, travelTimeEstimator, stopDurationProvider, vehicleStopDuration,
-				onboardRequests.stream().mapToInt(AlonsoMoraRequest::getSize).sum(), diversion.time,
+				startLoad, diversion.time,
 				Optional.of(diversion.link), requiredPickupTimes, requiredDropoffTimes);
 
 		tracker.setDrivingState(vehicle);
@@ -246,50 +258,50 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 				 */
 
 				switch (stop.getType()) {
-				case Pickup:
-					Verify.verify(!isOnboard, "Cannot pick up onboard requests");
+					case Pickup:
+						Verify.verify(!isOnboard, "Cannot pick up onboard requests");
 
-					double requiredPickupTime = requiredPickupTimes.get(stop.getRequest());
-					double calculatedPickupTime = stop.getTime();
+						double requiredPickupTime = requiredPickupTimes.get(stop.getRequest());
+						double calculatedPickupTime = stop.getTime();
 
-					if (calculatedPickupTime > requiredPickupTime) {
-						// Too late for pickup! Can never happen if vehicle is already assigned to the
-						// request and pickup violations are allowed.
-						isValid = false;
-					}
-
-					violations.add(Math.max(0, calculatedPickupTime - stop.getRequest().getPlannedPickupTime())
-							* stop.getRequest().getSize());
-
-					break;
-				case Dropoff:
-					double requiredDropoffTime = requiredDropoffTimes.get(stop.getRequest());
-					double calculatedDropoffTime = stop.getTime();
-
-					if (calculatedDropoffTime > requiredDropoffTime) {
-						// Too late for dropoff! Can never happen if vehicle is already assigned to the
-						// request and dropoff violations are allowed. Furthermore,
-
-						if (!onlyDropoff) {
-							// However, constraint can only be enforced when there are pickups. If we have
-							// only dropoffs we need to get rid of the passengers in any case.
+						if (calculatedPickupTime > requiredPickupTime) {
+							// Too late for pickup! Can never happen if vehicle is already assigned to the
+							// request and pickup violations are allowed.
 							isValid = false;
 						}
-					}
 
-					violations.add(Math.max(0, calculatedDropoffTime - stop.getRequest().getLatestDropoffTime())
-							* stop.getRequest().getSize());
+						violations.add(Math.max(0, calculatedPickupTime - stop.getRequest().getPlannedPickupTime())
+								* stop.getRequest().getItems());
 
-					break;
-				default:
-					throw new IllegalStateException();
+						break;
+					case Dropoff:
+						double requiredDropoffTime = requiredDropoffTimes.get(stop.getRequest());
+						double calculatedDropoffTime = stop.getTime();
+
+						if (calculatedDropoffTime > requiredDropoffTime) {
+							// Too late for dropoff! Can never happen if vehicle is already assigned to the
+							// request and dropoff violations are allowed. Furthermore,
+
+							if (!onlyDropoff) {
+								// However, constraint can only be enforced when there are pickups. If we have
+								// only dropoffs we need to get rid of the passengers in any case.
+								isValid = false;
+							}
+						}
+
+						violations.add(Math.max(0, calculatedDropoffTime - stop.getRequest().getLatestDropoffTime())
+								* stop.getRequest().getItems());
+
+						break;
+					default:
+						throw new IllegalStateException();
 				}
 
 				/*
 				 * Second, check occupancy constraint.
 				 */
 
-				if (tracker.getOccupancyAfter(i) > vehicle.getVehicle().getCapacity()) {
+				if (!tracker.getOccupancyAfter(i).fitsIn(vehicle.getVehicle().getCapacity())) {
 					// Not a valid solution because we exceed vehicle capacity.
 					isValid = false;
 				}
@@ -440,7 +452,7 @@ public class DefaultAlonsoMoraFunction implements AlonsoMoraFunction {
 					double calculatedDropoffTime = stop.getTime();
 					double directDropoffTime = stop.getRequest().getDirectArivalTime();
 					double delay = Math.max(0.0, calculatedDropoffTime - directDropoffTime);
-					objective += stop.getRequest().getSize() * delay;
+					objective += stop.getRequest().getItems() * delay;
 				}
 			}
 

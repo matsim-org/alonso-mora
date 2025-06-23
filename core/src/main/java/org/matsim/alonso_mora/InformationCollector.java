@@ -29,7 +29,7 @@ class InformationCollector {
 						1e-9 * (information.vehicleGraphsEndTime - information.vehicleGraphsStartTime)));
 		rebalancingInformation.add(new RebalancingInformation(simulationTime, information.numberOfRelocations,
 				1e-9 * (information.relocationEndTime - information.relocationStartTime)));
-		occupancyInformation.add(new OccupancyInformation(simulationTime, information.occupiedVehiclesByPassengers,
+		occupancyInformation.add(new OccupancyInformation(simulationTime, information.occupiedVehiclesByItems,
 				information.occupiedVehiclesByRequests));
 	}
 
@@ -107,12 +107,12 @@ class InformationCollector {
 	static public class OccupancyInformation {
 		public final double simulationTime;
 		public final List<Integer> occupiedCountByRequests;
-		public final List<Integer> occupiedCountByPassengers;
+		public final List<Integer> occupiedCountByItems;
 
-		public OccupancyInformation(double simulationTime, List<Integer> occupiedCountByPassengers,
+		public OccupancyInformation(double simulationTime, List<Integer> occupiedCountByItems,
 				List<Integer> occupiedCountByRequests) {
 			this.simulationTime = simulationTime;
-			this.occupiedCountByPassengers = occupiedCountByPassengers;
+			this.occupiedCountByItems = occupiedCountByItems;
 			this.occupiedCountByRequests = occupiedCountByRequests;
 		}
 	}

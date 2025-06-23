@@ -19,8 +19,7 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.contrib.drt.optimizer.constraints.DefaultDrtOptimizationConstraintsSet;
-import org.matsim.contrib.drt.optimizer.constraints.DrtOptimizationConstraintsSet;
+import org.matsim.contrib.drt.optimizer.constraints.DrtOptimizationConstraintsSetImpl;
 import org.matsim.contrib.drt.optimizer.insertion.extensive.ExtensiveInsertionSearchParams;
 import org.matsim.contrib.drt.routing.DrtRoute;
 import org.matsim.contrib.drt.routing.DrtRouteFactory;
@@ -204,23 +203,23 @@ public class RunNewYork {
 		config.addModule(drtConfig);
 
 		DrtConfigGroup modeConfig = new DrtConfigGroup();
-		modeConfig.mode = TransportMode.drt;
+		modeConfig.setMode(TransportMode.drt);
 
-		DefaultDrtOptimizationConstraintsSet constraintsSet =
-				(DefaultDrtOptimizationConstraintsSet) modeConfig
+		DrtOptimizationConstraintsSetImpl constraintsSet =
+				(DrtOptimizationConstraintsSetImpl) modeConfig
 				.addOrGetDrtOptimizationConstraintsParams()
 				.addOrGetDefaultDrtOptimizationConstraintsSet();
-		constraintsSet.maxTravelTimeAlpha = detourFactor;
-		constraintsSet.maxTravelTimeBeta = stopDuration;
-		constraintsSet.maxWaitTime = maximumWaitingTime + stopDuration;
-		constraintsSet.rejectRequestIfMaxWaitOrTravelTimeViolated = true;
-		constraintsSet.maxWalkDistance = 1000.0;
+		constraintsSet.setMaxTravelTimeAlpha(detourFactor);
+		constraintsSet.setMaxTravelTimeBeta(stopDuration);
+		constraintsSet.setMaxWaitTime(maximumWaitingTime + stopDuration);
+		constraintsSet.setRejectRequestIfMaxWaitOrTravelTimeViolated(true);
+		constraintsSet.setMaxWalkDistance(1000.0);
 
-		modeConfig.useModeFilteredSubnetwork = false;
-		modeConfig.idleVehiclesReturnToDepots = false;
-		modeConfig.operationalScheme = DrtConfigGroup.OperationalScheme.door2door;
-		modeConfig.plotDetailedCustomerStats = true;
-		modeConfig.numberOfThreads = threads;
+		modeConfig.setUseModeFilteredSubnetwork(false);
+		modeConfig.setIdleVehiclesReturnToDepots(false);
+		modeConfig.setOperationalScheme(DrtConfigGroup.OperationalScheme.door2door);
+		modeConfig.setPlotDetailedCustomerStats(true);
+		modeConfig.setNumberOfThreads(threads);
 
 		modeConfig.addParameterSet(new ExtensiveInsertionSearchParams());
 		drtConfig.addParameterSet(modeConfig);

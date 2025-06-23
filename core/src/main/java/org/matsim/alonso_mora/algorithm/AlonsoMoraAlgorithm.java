@@ -44,6 +44,8 @@ import org.matsim.contrib.drt.scheduler.EmptyVehicleRelocator;
 import org.matsim.contrib.drt.stops.PassengerStopDurationProvider;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.fleet.Fleet;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
+import org.matsim.contrib.dvrp.load.DvrpLoadType;
 import org.matsim.contrib.dvrp.passenger.PassengerRequestRejectedEvent;
 import org.matsim.contrib.dvrp.passenger.PassengerRequestScheduledEvent;
 import org.matsim.contrib.dvrp.schedule.DriveTask;
@@ -92,7 +94,8 @@ public class AlonsoMoraAlgorithm {
 	private int numberOfServedRequests = 0;
 	private int numberOfRejectedRequests = 0;
 
-	private final int maximumOccupancy;
+	private int totalOfServedItems = 0;
+	private int totalOfRejectedItems = 0;
 
 	private final TravelTimeEstimator travelTimeEstimator;
 	private final PassengerStopDurationProvider stopDurationProvider;
@@ -100,11 +103,13 @@ public class AlonsoMoraAlgorithm {
 	private final AlgorithmSettings settings;
 	private final double vehicleStopDuration;
 
+	private final DvrpLoad emptyLoad;
+
 	public AlonsoMoraAlgorithm(Fleet fleet, AssignmentSolver assignmentSolver, RelocationSolver rebalancingSolver,
 			AlonsoMoraFunction function, AlonsoMoraScheduler scheduler, EventsManager eventsManager, String mode,
 			AlonsoMoraVehicleFactory vehicleFactory, ForkJoinPool forkJoinPool, TravelTimeEstimator travelTimeEstimator,
 			PassengerStopDurationProvider stopDurationProvider, AlgorithmSettings settings, DrtOfferAcceptor offerAcceptor,
-			double vehicleStopDuration) {
+			double vehicleStopDuration, DvrpLoadType loadType) {
 		this.assignmentSolver = assignmentSolver;
 		this.rebalancingSolver = rebalancingSolver;
 		this.scheduler = scheduler;
@@ -117,6 +122,7 @@ public class AlonsoMoraAlgorithm {
 		this.settings = settings;
 		this.offerAcceptor = offerAcceptor;
 		this.vehicleStopDuration = vehicleStopDuration;
+		this.emptyLoad = loadType.getEmptyLoad();
 
 		// Create vehicle wrappers
 		vehicles = new ArrayList<>(fleet.getVehicles().size());
@@ -126,9 +132,7 @@ public class AlonsoMoraAlgorithm {
 		}
 
 		Collections.sort(vehicles, (a, b) -> a.getVehicle().getId().compareTo(b.getVehicle().getId()));
-
-		maximumOccupancy = vehicles.stream().mapToInt(v -> v.getVehicle().getCapacity()).max().orElse(0);
-		updateRequestGraph(Double.NEGATIVE_INFINITY, new Information(maximumOccupancy));
+		updateRequestGraph(Double.NEGATIVE_INFINITY, new Information());
 	}
 
 	/**
@@ -214,7 +218,8 @@ public class AlonsoMoraAlgorithm {
 
 			if (status.equals(TaskStatus.STARTED) || status.equals(TaskStatus.PERFORMED)) {
 				iterator.remove();
-				numberOfServedRequests += request.getSize();
+				numberOfServedRequests++;
+				totalOfServedItems += request.getItems();
 				request.getVehicle().removeOnboardRequest(request);
 			}
 		}
@@ -237,6 +242,7 @@ public class AlonsoMoraAlgorithm {
 						drtRequest.getPassengerIds(), "queue time exeeded"));
 
 				numberOfRejectedRequests++;
+				totalOfRejectedItems += request.getItems();
 			}
 		}
 
@@ -318,7 +324,7 @@ public class AlonsoMoraAlgorithm {
 						v.setRoute(updatedRoute);
 
 						if (updatedRoute.size() > 0) {
-							RouteTracker congestionTracker = new RouteTracker(v, travelTimeEstimator, stopDurationProvider, vehicleStopDuration, 0,
+							RouteTracker congestionTracker = new RouteTracker(v, travelTimeEstimator, stopDurationProvider, vehicleStopDuration, emptyLoad,
 									diversion.time, Optional.of(diversion.link));
 							congestionTracker.setDrivingState(v);
 							congestionTracker.update(v.getRoute());
@@ -663,7 +669,7 @@ public class AlonsoMoraAlgorithm {
 			 * of the system.
 			 */
 
-			information = Optional.of(new Information(maximumOccupancy));
+			information = Optional.of(new Information());
 			generateOccupancyInformation(now, information.get());
 
 			// Update vehicle states
@@ -689,9 +695,13 @@ public class AlonsoMoraAlgorithm {
 	 * Logs running information of the algorithm
 	 */
 	private void printInformation() {
-		int numberOfQueuedRequests = queuedRequests.stream().mapToInt(r -> r.getSize()).sum();
-		int numberOfAssignedRequests = assignedRequests.stream().mapToInt(r -> r.getSize()).sum();
-		int numberOfOnboardRequests = onboardRequests.stream().mapToInt(r -> r.getSize()).sum();
+		int numberOfQueuedRequests = queuedRequests.size();
+		int numberOfAssignedRequests = assignedRequests.size();
+		int numberOfOnboardRequests = onboardRequests.size();
+
+		int totalOfQueuedItems = queuedRequests.stream().mapToInt(AlonsoMoraRequest::getItems).sum();
+		int totalOfAssignedItems = assignedRequests.stream().mapToInt(AlonsoMoraRequest::getItems).sum();
+		int totalOfOnboardItems = onboardRequests.stream().mapToInt(AlonsoMoraRequest::getItems).sum();
 
 		int numberOfAssignedVehicles = (int) vehicles.stream().filter(v -> {
 			if (v.getOnboardRequests().size() > 0) {
@@ -721,9 +731,21 @@ public class AlonsoMoraAlgorithm {
 		logger.info(String.format("Graphs: %d RR, %d RTV", requestGraph.getSize(),
 				vehicleGraphs.values().stream().mapToInt(graph -> graph.getSize()).sum()));
 
-		logger.info(String.format("Requests: Q(%d) A(%d) O(%d) S(%d) R(%d), Vehicles: I(%d), A(%d), R(%d)",
-				numberOfQueuedRequests, numberOfAssignedRequests, numberOfOnboardRequests, numberOfServedRequests,
-				numberOfRejectedRequests, numberOfIdleVehicles, numberOfAssignedVehicles, numberOfRebalancingVehicles));
+		boolean showWeighted = numberOfServedRequests != totalOfServedItems;
+		showWeighted |= numberOfRejectedRequests != totalOfRejectedItems;
+		showWeighted |= numberOfQueuedRequests != totalOfQueuedItems;
+		showWeighted |= numberOfAssignedRequests != totalOfAssignedItems;
+		showWeighted |= numberOfOnboardRequests != totalOfOnboardItems;
+
+		if (!showWeighted) {
+			logger.info(String.format("Requests: Q(%d) A(%d) O(%d) S(%d) R(%d), Vehicles: I(%d), A(%d), R(%d)",
+					numberOfQueuedRequests, numberOfAssignedRequests, numberOfOnboardRequests, numberOfServedRequests,
+					numberOfRejectedRequests, numberOfIdleVehicles, numberOfAssignedVehicles, numberOfRebalancingVehicles));
+		} else {
+			logger.info(String.format("Items: Q(%d) A(%d) O(%d) S(%d) R(%d), Vehicles: I(%d), A(%d), R(%d)",
+					totalOfQueuedItems, totalOfAssignedItems, totalOfOnboardItems, totalOfServedItems,
+					totalOfRejectedItems, numberOfIdleVehicles, numberOfAssignedVehicles, numberOfRebalancingVehicles));
+		}
 	}
 
 	private void generateOccupancyInformation(double now, Information information) {
@@ -733,13 +755,21 @@ public class AlonsoMoraAlgorithm {
 			int requestCount = (int) requests.stream() //
 					.count();
 
-			int passengerCount = requests.stream() //
-					.mapToInt(r -> r.getSize()).sum();
+			int items = requests.stream() //
+					.mapToInt(AlonsoMoraRequest::getItems).sum();
+
+			while (information.occupiedVehiclesByRequests.size() < requestCount + 1) {
+				information.occupiedVehiclesByRequests.add(0);
+			}
+
+			while (information.occupiedVehiclesByItems.size() < items + 1) {
+				information.occupiedVehiclesByItems.add(0);
+			}
 
 			information.occupiedVehiclesByRequests.set(requestCount,
 					information.occupiedVehiclesByRequests.get(requestCount) + 1);
-			information.occupiedVehiclesByPassengers.set(passengerCount,
-					information.occupiedVehiclesByPassengers.get(passengerCount) + 1);
+			information.occupiedVehiclesByItems.set(items,
+					information.occupiedVehiclesByItems.get(items) + 1);
 		}
 	}
 
@@ -768,11 +798,6 @@ public class AlonsoMoraAlgorithm {
 	}
 
 	static public class Information {
-		Information(int maximumOccupancy) {
-			occupiedVehiclesByPassengers = new ArrayList<>(Collections.nCopies(maximumOccupancy + 1, 0));
-			occupiedVehiclesByRequests = new ArrayList<>(Collections.nCopies(maximumOccupancy + 1, 0));
-		}
-
 		public long assignmentStartTime;
 		public long assignmentEndTime;
 
@@ -787,8 +812,8 @@ public class AlonsoMoraAlgorithm {
 		public long vehicleGraphsEndTime;
 		public int vehicleGraphSize;
 
-		public final List<Integer> occupiedVehiclesByPassengers;
-		public final List<Integer> occupiedVehiclesByRequests;
+		public final List<Integer> occupiedVehiclesByItems = new ArrayList<>(100);
+		public final List<Integer> occupiedVehiclesByRequests = new ArrayList<>(100);
 
 		public int numberOfRelocations = 0;
 		public int numberOfReassignments = 0;

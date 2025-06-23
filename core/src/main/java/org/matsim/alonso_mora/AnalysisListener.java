@@ -238,7 +238,7 @@ class AnalysisListener implements IterationEndsListener {
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path)));
 
 				int maximumPersons = occupancyInformation.stream()
-						.mapToInt(item -> item.occupiedCountByPassengers.size()).max().orElse(0);
+						.mapToInt(item -> item.occupiedCountByItems.size()).max().orElse(0);
 
 				List<String> header = new ArrayList<>(Arrays.asList("time"));
 
@@ -253,10 +253,14 @@ class AnalysisListener implements IterationEndsListener {
 
 					List<String> processedRow = new ArrayList<>(Arrays.asList( //
 							String.valueOf(row.simulationTime), //
-							String.valueOf(row.occupiedCountByPassengers.get(0))));
+							String.valueOf(row.occupiedCountByItems.get(0))));
 
 					for (int k = 0; k < maximumPersons; k++) {
-						processedRow.add(String.valueOf(row.occupiedCountByPassengers.get(k)));
+						if (k < row.occupiedCountByItems.size()) {
+							processedRow.add(String.valueOf(row.occupiedCountByItems.get(k)));
+						} else {
+							processedRow.add(String.valueOf(0));
+						}
 					}
 
 					writer.write(String.join(";", processedRow) + "\n");
@@ -269,7 +273,7 @@ class AnalysisListener implements IterationEndsListener {
 		}
 
 		{ // Occupancy by passengers
-			int maximumPersons = occupancyInformation.stream().mapToInt(item -> item.occupiedCountByPassengers.size())
+			int maximumPersons = occupancyInformation.stream().mapToInt(item -> item.occupiedCountByItems.size())
 					.max().orElse(0);
 
 			List<Double> times = occupancyInformation.stream().map(i -> i.simulationTime).collect(Collectors.toList());
@@ -280,7 +284,11 @@ class AnalysisListener implements IterationEndsListener {
 				Map<String, Double> item = new HashMap<>();
 
 				for (int k = 0; k < maximumPersons; k++) {
-					item.put(names.get(k), (double) info.occupiedCountByPassengers.get(k));
+					if (k < info.occupiedCountByItems.size()) {
+						item.put(names.get(k), (double) info.occupiedCountByItems.get(k));
+					} else {
+						item.put(names.get(k), 0.0);
+					}
 				}
 
 				return ImmutableMap.copyOf(item);
@@ -320,7 +328,11 @@ class AnalysisListener implements IterationEndsListener {
 							String.valueOf(row.occupiedCountByRequests.get(0))));
 
 					for (int k = 0; k < maximumRequests; k++) {
-						processedRow.add(String.valueOf(row.occupiedCountByRequests.get(k)));
+						if (k < row.occupiedCountByRequests.size()) {
+							processedRow.add(String.valueOf(row.occupiedCountByRequests.get(k)));
+						} else {
+							processedRow.add(String.valueOf(0));
+						}
 					}
 
 					writer.write(String.join(";", processedRow) + "\n");
@@ -344,7 +356,11 @@ class AnalysisListener implements IterationEndsListener {
 				Map<String, Double> item = new HashMap<>();
 
 				for (int k = 0; k < maximumRequests; k++) {
-					item.put(names.get(k), (double) info.occupiedCountByRequests.get(k));
+					if (k < info.occupiedCountByRequests.size()) {
+						item.put(names.get(k), (double) info.occupiedCountByRequests.get(k));
+					} else {
+						item.put(names.get(k), 0.0);
+					}
 				}
 
 				return ImmutableMap.copyOf(item);

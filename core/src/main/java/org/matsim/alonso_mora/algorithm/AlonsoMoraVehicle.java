@@ -25,4 +25,6 @@ public interface AlonsoMoraVehicle extends Comparable<AlonsoMoraVehicle> {
 	public void setRoute(List<AlonsoMoraStop> route);
 
 	public List<AlonsoMoraStop> getRoute();
+
+	public int getItemCapacity();
 }

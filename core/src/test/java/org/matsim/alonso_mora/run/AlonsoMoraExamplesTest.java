@@ -54,6 +54,8 @@ import org.matsim.contrib.drt.extension.operations.operationFacilities.Operation
 import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilitySpecificationImpl;
 import org.matsim.contrib.drt.extension.operations.operationFacilities.OperationFacilityType;
 import org.matsim.contrib.drt.extension.operations.shifts.config.ShiftsParams;
+import org.matsim.contrib.drt.extension.operations.shifts.dispatcher.DefaultShiftScheduler;
+import org.matsim.contrib.drt.extension.operations.shifts.dispatcher.ShiftScheduler;
 import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDrtModeModule;
 import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDrtModeOptimizerQSimModule;
 import org.matsim.contrib.drt.extension.operations.shifts.run.ShiftDvrpFleetQsimModule;
@@ -87,7 +89,7 @@ import org.matsim.vis.otfvis.OTFVisConfigGroup;
 /**
  * @author sebhoerl
  */
-public class AlonsoMoraExamplesIT {
+public class AlonsoMoraExamplesTest {
 
 	@RegisterExtension
 	private MatsimTestUtils utils = new MatsimTestUtils();
@@ -315,6 +317,7 @@ public class AlonsoMoraExamplesIT {
 			public void install() {
 				bindModal(DrtShiftsSpecification.class).toInstance(shifts);
 				bindModal(OperationFacilitiesSpecification.class).toInstance(operationFacilities);
+				bindModal(ShiftScheduler.class).toProvider(modalProvider(getter -> new DefaultShiftScheduler(shifts)));
 			}
 		});
 
@@ -325,9 +328,9 @@ public class AlonsoMoraExamplesIT {
 		var expectedStats = Stats.newBuilder() //
 				.rejectionRate(0.86) //
 				.rejections(332) //
-				.waitAverage(283.79) //
+				.waitAverage(284.32) //
 				.inVehicleTravelTimeMean(370.75) //
-				.totalTravelTimeMean(654.54) //
+				.totalTravelTimeMean(655.07) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
@@ -367,11 +370,11 @@ public class AlonsoMoraExamplesIT {
 		double rejectionRate = Double.parseDouble(params.get("rejectionRate"));
 		double totalTravelTimeMean = Double.parseDouble(params.get("totalTravelTime_mean"));
 
-		assertEquals(rejectionRate, expectedStats.rejectionRate);
-		assertEquals(rejections, expectedStats.rejections);
-		assertEquals(waitAverage, expectedStats.waitAverage);
-		assertEquals(inVehicleTravelTimeMean, expectedStats.inVehicleTravelTimeMean);
-		assertEquals(totalTravelTimeMean, expectedStats.totalTravelTimeMean);
+		assertEquals(expectedStats.rejectionRate, rejectionRate);
+		assertEquals(expectedStats.rejections, rejections);
+		assertEquals(expectedStats.waitAverage, waitAverage);
+		assertEquals(expectedStats.inVehicleTravelTimeMean, inVehicleTravelTimeMean);
+		assertEquals(expectedStats.totalTravelTimeMean, totalTravelTimeMean);
 	}
 
 	private static class Stats {
@@ -498,9 +501,9 @@ public class AlonsoMoraExamplesIT {
 		var expectedStats = Stats.newBuilder() //
 				.rejectionRate(0.03) //
 				.rejections(11) //
-				.waitAverage(204.48) //
-				.inVehicleTravelTimeMean(345.55) //
-				.totalTravelTimeMean(550.03) //
+				.waitAverage(203.42) //
+				.inVehicleTravelTimeMean(346.95) //
+				.totalTravelTimeMean(550.37) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);

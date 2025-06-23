@@ -31,8 +31,11 @@ public class DefaultAlonsoMoraVehicle implements AlonsoMoraVehicle {
 
 	private List<AlonsoMoraStop> route = new ArrayList<>();
 
-	public DefaultAlonsoMoraVehicle(DvrpVehicle vehicle) {
+	private int itemCapacity;
+
+	public DefaultAlonsoMoraVehicle(DvrpVehicle vehicle, int itemCapacity) {
 		this.vehicle = vehicle;
+		this.itemCapacity = itemCapacity;
 	}
 
 	public DvrpVehicle getVehicle() {
@@ -62,6 +65,11 @@ public class DefaultAlonsoMoraVehicle implements AlonsoMoraVehicle {
 	@Override
 	public List<AlonsoMoraStop> getRoute() {
 		return Collections.unmodifiableList(route);
+	}
+
+	@Override
+	public int getItemCapacity() {
+		return itemCapacity;
 	}
 
 	@Override

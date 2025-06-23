@@ -47,7 +47,7 @@ public class DefaultVehicleGraph implements VehicleGraph {
 		this.tripLimitPerVehicle = tripLimitPerVehicle;
 		this.tripLimitPerSequenceLength = tripLimitPerSequenceLength;
 
-		ensureTripListSize(vehicle.getVehicle().getCapacity() * 2);
+		ensureTripListSize(vehicle.getItemCapacity() * 2);
 	}
 
 	private void ensureTripListSize(int numberOfPassengers) {

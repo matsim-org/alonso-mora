@@ -3,6 +3,7 @@ package org.matsim.alonso_mora.shifts;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.AlonsoMoraOptimizer;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicleFactory;
+import org.matsim.alonso_mora.algorithm.ItemsProvider;
 import org.matsim.alonso_mora.algorithm.function.DefaultAlonsoMoraFunction.Constraint;
 import org.matsim.alonso_mora.scheduling.AlonsoMoraScheduler;
 import org.matsim.alonso_mora.scheduling.DefaultAlonsoMoraScheduler.OperationalVoter;
@@ -39,7 +40,8 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 	@Override
 	protected void configureQSim() {
 		bindModal(AlonsoMoraVehicleFactory.class).toProvider(modalProvider(getter -> {
-			return v -> new ShiftAlonsoMoraVehicle(v);
+			ItemsProvider itemsProvider = getter.getModal(ItemsProvider.class);
+			return v -> new ShiftAlonsoMoraVehicle(v, itemsProvider.getItems(v.getCapacity()));
 		}));
 
 		// TODO: This can become a general binding in DRT
@@ -74,7 +76,7 @@ public class ShiftAlonsoMoraModule extends AbstractDvrpModeQSimModule {
 			OperationalVoter operationalVoter = getter.getModal(OperationalVoter.class);
 			PassengerStopDurationProvider stopDurationProvider = getter.getModal(PassengerStopDurationProvider.class);
 			
-			return new ShiftAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.stopDuration,
+			return new ShiftAlonsoMoraScheduler(taskFactory, stopDurationProvider, drtConfig.getStopDuration(),
 					amConfig.checkDeterminsticTravelTimes, amConfig.rerouteDuringScheduling, travelTime, network,
 					endTimeCalculator, router, operationalVoter);
 		}));

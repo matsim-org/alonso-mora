@@ -1,9 +1,17 @@
 package org.matsim.alonso_mora.algorithm;
 
+import java.util.Comparator;
+
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.schedule.DrtStopTask;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
+import org.matsim.contrib.dvrp.load.DvrpLoadType;
+import org.matsim.contrib.dvrp.load.IntegerLoad;
+import org.matsim.contrib.dvrp.load.IntegerLoadType;
+import org.matsim.contrib.dvrp.load.IntegersLoad;
+import org.matsim.contrib.dvrp.load.IntegersLoadType;
 import org.matsim.contrib.dvrp.schedule.Task.TaskStatus;
 
 import com.google.common.base.Preconditions;
@@ -41,15 +49,17 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 	private final double latestPickupTime;
 	private final double latestDropoffTime;
 	private final double earliestPickupTime;
+	private final int items;
 
 	private final double directRideDistance;
 
 	public DefaultAlonsoMoraRequest(DrtRequest drtRequest, double latestAssignmentTime, double directArrivalTime,
-			double directRideDistance) {
+			double directRideDistance, DvrpLoadType loadType, int items) {
 		this.directArrivalTime = directArrivalTime;
 		this.directRideDistance = directRideDistance;
 		this.drtRequest = drtRequest;
 		this.cachedHashCode = drtRequest.getId().index();
+		this.items = items;
 
 		this.pickupLink = this.drtRequest.getFromLink();
 		this.dropoffLink = this.drtRequest.getToLink();
@@ -62,15 +72,43 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 		Verify.verify(this.dropoffLink.equals(drtRequest.getToLink()));
 
 		this.latestAssignmentTime = Math.min(getLatestPickupTime(), latestAssignmentTime);
+
+		// TODO: Remove this once DvrpLoad implements Comparable
+		this.loadComparator = new LoadComparator(loadType.size());
 	}
+
+	private class LoadComparator implements Comparator<DvrpLoad> {
+		private int size;
+
+		LoadComparator(int size) {
+			this.size = size;
+		}
+
+		@Override
+		public int compare(DvrpLoad a, DvrpLoad b) {
+			int result = 0;
+
+			for (int k = 0; k < size; k++) {
+				result = Integer.compare((int) a.getElement(k), (int) b.getElement(k));
+				if (result != 0) break;
+			}
+
+			return result;
+		}
+	}
+
+	// TODO: Start remove once DvrpLoad implements Comparable
+
+	private final Comparator<DvrpLoad> loadComparator;
 
 	@Override
 	public int compareTo(AlonsoMoraRequest otherRequest) {
 		if (otherRequest instanceof DefaultAlonsoMoraRequest) {
-			int sizeComparison = Integer.compare(getSize(), otherRequest.getSize());
+			int loadComparison = loadComparator.compare(
+				drtRequest.getLoad(), otherRequest.getDrtRequest().getLoad());
 
-			if (sizeComparison != 0) {
-				return sizeComparison;
+			if (loadComparison != 0) {
+				return loadComparison;
 			}
 
 			return Integer.compare(drtRequest.getId().index(), otherRequest.getDrtRequest().getId().index());
@@ -78,6 +116,8 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 
 		throw new IllegalStateException();
 	}
+
+	// TODO: End remove once DvrpLoad implements Comparable
 
 	@Override
 	public boolean equals(Object otherObject) {
@@ -167,8 +207,8 @@ public class DefaultAlonsoMoraRequest implements AlonsoMoraRequest {
 	}
 
 	@Override
-	public int getSize() {
-		return drtRequest.getPassengerCount();
+	public int getItems() {
+		return items;
 	}
 
 	@Override
