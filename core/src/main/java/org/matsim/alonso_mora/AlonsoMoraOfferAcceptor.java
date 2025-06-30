@@ -8,12 +8,14 @@ import org.matsim.contrib.drt.passenger.DrtRequest;
 
 public class AlonsoMoraOfferAcceptor implements DrtOfferAcceptor {
 	@Override
-	public Optional<AcceptedDrtRequest> acceptDrtOffer(DrtRequest request, double departureTime, double arrivalTime) {
+	public Optional<AcceptedDrtRequest> acceptDrtOffer(DrtRequest request, double departureTime, double arrivalTime,
+			double dropoffDuration) {
 		return Optional.of(AcceptedDrtRequest.newBuilder() //
 				.request(request) //
 				.earliestStartTime(request.getEarliestStartTime()) //
 				.latestArrivalTime(request.getLatestArrivalTime()) //
 				.latestStartTime(departureTime) //
+				.dropoffDuration(dropoffDuration) //
 				.build());
 	}
 }
