@@ -37,9 +37,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup.GlpkMpsAssignmentParameters;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup.RoutingEstimatorParameters;
-import org.matsim.alonso_mora.preemptive.PreemptiveRejectionAdapter;
 import org.matsim.alonso_mora.AlonsoMoraConfigurator;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
+import org.matsim.alonso_mora.preemptive.PreemptiveRejectionAdapter;
 import org.matsim.alonso_mora.shifts.ShiftAlonsoMoraModule;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -66,7 +66,10 @@ import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftBreakSpe
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftSpecificationImpl;
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecification;
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecificationImpl;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionModule;
 import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionOptimizer;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionOptimizer.RejectionEntry;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionOptimizer.RejectionEntryContainer;
 import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionParams;
 import org.matsim.contrib.drt.prebooking.PrebookingParams;
 import org.matsim.contrib.drt.prebooking.logic.ProbabilityBasedPrebookingLogic;
@@ -545,7 +548,6 @@ public class AlonsoMoraExamplesTest {
 		}
 
 		PreemptiveRejectionParams params = new PreemptiveRejectionParams();
-		params.setInputPath("/home/shoerl/temp/preemptive.json");
 		drtConfig.addParameterSet(params);
 
 		// Set up controller
@@ -554,18 +556,32 @@ public class AlonsoMoraExamplesTest {
 		controller.addOverridingModule(new DvrpModule());
 		controller.addOverridingModule(new MultiModeDrtModule());
 		controller.configureQSimComponents(DvrpQSimComponents.activateAllModes(MultiModeDrtConfigGroup.get(config)));
+		controller.addOverridingModule(new PreemptiveRejectionModule());
 
 		AlonsoMoraConfigurator.configure(controller, amConfig.mode);
 		PreemptiveRejectionAdapter.configure(controller, amConfig.mode);
 
+		RejectionEntryContainer rejections = new RejectionEntryContainer();
+		RejectionEntry entry = new RejectionEntry();
+		rejections.rejections.add(entry);
+		entry.bookingClass = "business";
+		entry.rejectionRate = 0.5;
+
+		controller.addOverridingModule(new AbstractDvrpModeModule(drtConfig.getMode()) {
+			@Override
+			public void install() {
+				bindModal(RejectionEntryContainer.class).toInstance(rejections);
+			}
+		});
+
 		controller.run();
 
 		var expectedStats = Stats.newBuilder() //
-				.rejectionRate(0.27) //
-				.rejections(103) //
-				.waitAverage(258.24) //
-				.inVehicleTravelTimeMean(382.17) //
-				.totalTravelTimeMean(640.41) //
+				.rejectionRate(0.37) //
+				.rejections(145) //
+				.waitAverage(226.72) //
+				.inVehicleTravelTimeMean(347.58) //
+				.totalTravelTimeMean(574.3) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
