@@ -39,10 +39,12 @@ import org.matsim.alonso_mora.AlonsoMoraConfigGroup.GlpkMpsAssignmentParameters;
 import org.matsim.alonso_mora.AlonsoMoraConfigGroup.RoutingEstimatorParameters;
 import org.matsim.alonso_mora.AlonsoMoraConfigurator;
 import org.matsim.alonso_mora.MultiModeAlonsoMoraConfigGroup;
+import org.matsim.alonso_mora.preemptive.PreemptiveRejectionAdapter;
 import org.matsim.alonso_mora.shifts.ShiftAlonsoMoraModule;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.common.zones.systems.grid.square.SquareGridZoneSystemParams;
 import org.matsim.contrib.drt.extension.DrtWithExtensionsConfigGroup;
 import org.matsim.contrib.drt.extension.operations.DrtOperationsParams;
@@ -64,6 +66,11 @@ import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftBreakSpe
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftSpecificationImpl;
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecification;
 import org.matsim.contrib.drt.extension.operations.shifts.shift.DrtShiftsSpecificationImpl;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionModule;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionOptimizer;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionOptimizer.RejectionEntry;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionOptimizer.RejectionEntryContainer;
+import org.matsim.contrib.drt.extension.preemptive_rejection.PreemptiveRejectionParams;
 import org.matsim.contrib.drt.prebooking.PrebookingParams;
 import org.matsim.contrib.drt.prebooking.logic.ProbabilityBasedPrebookingLogic;
 import org.matsim.contrib.drt.routing.DrtRoute;
@@ -139,7 +146,7 @@ public class AlonsoMoraExamplesTest {
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
 	}
-	
+
 	@Test
 	public void testRunAlonsoMoraWithDeterministicTravelTimesCheck() {
 		Id.resetCaches();
@@ -151,19 +158,19 @@ public class AlonsoMoraExamplesTest {
 
 		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
 		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
-		
+
 		// Start: Configure deterministic travel times
 		config.qsim().setFlowCapFactor(1e9);
 		config.qsim().setStorageCapFactor(1e9);
-		
+
 		amConfig.checkDeterminsticTravelTimes = true;
-		
+
 		RoutingEstimatorParameters estimatorParameters = new RoutingEstimatorParameters();
 		estimatorParameters.cacheLifetime = 0.0;
-		
+
 		amConfig.clearTravelTimeEstimator();
 		amConfig.addParameterSet(estimatorParameters);
-		
+
 		// End
 
 		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
@@ -436,7 +443,7 @@ public class AlonsoMoraExamplesTest {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testRunAlonsoMoraWithPrebooking() {
 		Id.resetCaches();
@@ -452,30 +459,30 @@ public class AlonsoMoraExamplesTest {
 		// Start: Configure deterministic travel times
 		config.qsim().setFlowCapFactor(1e9);
 		config.qsim().setStorageCapFactor(1e9);
-		
+
 		amConfig.checkDeterminsticTravelTimes = true;
 		amConfig.preferNonViolation = true;
 		amConfig.congestionMitigation.allowPickupViolations = false;
 		amConfig.congestionMitigation.allowPickupsWithDropoffViolations = false;
-		
+
 		RoutingEstimatorParameters estimatorParameters = new RoutingEstimatorParameters();
 		estimatorParameters.cacheLifetime = 0.0;
-		
+
 		amConfig.clearTravelTimeEstimator();
 		amConfig.addParameterSet(estimatorParameters);
-		
+
 		amConfig.clearAssignmentSolver();
 		amConfig.addParameterSet(new GlpkMpsAssignmentParameters());
-		
+
 		// End
-		
+
 		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controller().setOutputDirectory(utils.getOutputDirectory());
 
 		// Remove DRT rebalancer as we want to use AM rebalancer
 		DrtConfigGroup drtConfig = MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();
 		drtConfig.removeParameterSet(drtConfig.getRebalancingParams().get());
-		
+
 		// prebooking
 		PrebookingParams prebookingParams = new PrebookingParams();
 		drtConfig.addParameterSet(prebookingParams);
@@ -494,7 +501,7 @@ public class AlonsoMoraExamplesTest {
 		controller.configureQSimComponents(DvrpQSimComponents.activateAllModes(MultiModeDrtConfigGroup.get(config)));
 
 		ProbabilityBasedPrebookingLogic.install(controller, drtConfig, 0.25, 600.0);
-		
+
 		AlonsoMoraConfigurator.configure(controller, amConfig.mode);
 		controller.run();
 
@@ -504,6 +511,77 @@ public class AlonsoMoraExamplesTest {
 				.waitAverage(203.42) //
 				.inVehicleTravelTimeMean(346.95) //
 				.totalTravelTimeMean(550.37) //
+				.build();
+
+		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
+	}
+
+	@Test
+	public void testRunAlonsoMoraWithPreemptiveRejection() {
+		Id.resetCaches();
+		URL configUrl = IOUtils.extendUrl(ExamplesUtils.getTestScenarioURL("mielec"), "mielec_drt_config.xml");
+		DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
+		dvrpConfigGroup.getTravelTimeMatrixParams().addParameterSet(new SquareGridZoneSystemParams());
+		Config config = ConfigUtils.loadConfig(configUrl, new MultiModeDrtConfigGroup(DrtWithExtensionsConfigGroup::new), dvrpConfigGroup,
+				new MultiModeAlonsoMoraConfigGroup(), new OTFVisConfigGroup());
+
+		AlonsoMoraConfigGroup amConfig = new AlonsoMoraConfigGroup();
+		MultiModeAlonsoMoraConfigGroup.get(config).addParameterSet(amConfig);
+
+		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controller().setOutputDirectory(utils.getOutputDirectory());
+
+		// Remove DRT rebalancer as we want to use AM rebalancer
+		DrtWithExtensionsConfigGroup drtConfig = (DrtWithExtensionsConfigGroup) MultiModeDrtConfigGroup.get(config).getModalElements().iterator().next();
+		drtConfig.removeParameterSet(drtConfig.getRebalancingParams().get());
+
+		// Load scenario
+		Scenario scenario = ScenarioUtils.createScenario(config);
+		scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class,
+				new DrtRouteFactory());
+		ScenarioUtils.loadScenario(scenario);
+
+		Random random = new Random(0);
+		for (Person person : scenario.getPopulation().getPersons().values()) {
+			String bookingClass = random.nextDouble() < 0.5 ? "economy" : "business";
+			PreemptiveRejectionOptimizer.setBookingClass(person, bookingClass);
+		}
+
+		PreemptiveRejectionParams params = new PreemptiveRejectionParams();
+		drtConfig.addParameterSet(params);
+
+		// Set up controller
+		Controler controller = new Controler(scenario);
+
+		controller.addOverridingModule(new DvrpModule());
+		controller.addOverridingModule(new MultiModeDrtModule());
+		controller.configureQSimComponents(DvrpQSimComponents.activateAllModes(MultiModeDrtConfigGroup.get(config)));
+		controller.addOverridingModule(new PreemptiveRejectionModule());
+
+		AlonsoMoraConfigurator.configure(controller, amConfig.mode);
+		PreemptiveRejectionAdapter.configure(controller, amConfig.mode);
+
+		RejectionEntryContainer rejections = new RejectionEntryContainer();
+		RejectionEntry entry = new RejectionEntry();
+		rejections.rejections.add(entry);
+		entry.bookingClass = "business";
+		entry.rejectionRate = 0.5;
+
+		controller.addOverridingModule(new AbstractDvrpModeModule(drtConfig.getMode()) {
+			@Override
+			public void install() {
+				bindModal(RejectionEntryContainer.class).toInstance(rejections);
+			}
+		});
+
+		controller.run();
+
+		var expectedStats = Stats.newBuilder() //
+				.rejectionRate(0.37) //
+				.rejections(145) //
+				.waitAverage(226.72) //
+				.inVehicleTravelTimeMean(347.58) //
+				.totalTravelTimeMean(574.3) //
 				.build();
 
 		verifyDrtCustomerStatsCloseToExpectedStats(utils.getOutputDirectory(), expectedStats);
