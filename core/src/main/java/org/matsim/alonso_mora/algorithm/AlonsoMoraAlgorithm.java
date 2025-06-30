@@ -470,8 +470,11 @@ public class AlonsoMoraAlgorithm {
 				if (acceptedRequest.isEmpty()) {
 					// first need to check if user accepts the offer
 					
+					double dropoffDuration = stopDurationProvider
+						.calcDropoffDuration(trip.getVehicle().getVehicle(), request.getDrtRequest());
+
 					acceptedRequest = offerAcceptor.acceptDrtOffer(request.getDrtRequest(),
-							expectedPickupTime, expectedDropoffTime);
+							expectedPickupTime, expectedDropoffTime, dropoffDuration);
 					
 					if (acceptedRequest.isPresent()) {
 						request.accept(acceptedRequest.get());
