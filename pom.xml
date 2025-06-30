@@ -20,7 +20,7 @@
 	<properties>
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
-		<matsim.version>2026.0-2025w24</matsim.version>
+		<matsim.version>2026.0-2025w26</matsim.version>
 		<junit.version>5.13.2</junit.version>
 	</properties>
 
