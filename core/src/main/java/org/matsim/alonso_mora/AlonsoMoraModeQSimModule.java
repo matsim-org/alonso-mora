@@ -59,7 +59,7 @@ import org.matsim.alonso_mora.travel_time.RoutingTravelTimeEstimator;
 import org.matsim.alonso_mora.travel_time.TravelTimeEstimator;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
-import org.matsim.contrib.drt.optimizer.QSimScopeForkJoinPoolHolder;
+import org.matsim.contrib.drt.optimizer.QsimScopeForkJoinPool;
 import org.matsim.contrib.drt.optimizer.rebalancing.RebalancingStrategy;
 import org.matsim.contrib.drt.passenger.DrtOfferAcceptor;
 import org.matsim.contrib.drt.prebooking.unscheduler.RequestUnscheduler;
@@ -401,7 +401,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.get(EventsManager.class), //
 					drtConfig.getMode(), //
 					getter.getModal(AlonsoMoraVehicleFactory.class), //
-					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
+					getter.getModal(QsimScopeForkJoinPool.class).getPool(), //
 					getter.getModal(TravelTimeEstimator.class), //
 					getter.getModal(PassengerStopDurationProvider.class), //
 					new AlgorithmSettings(amConfig), //
@@ -428,7 +428,7 @@ public class AlonsoMoraModeQSimModule extends AbstractDvrpModeQSimModule {
 					getter.getModal(ScheduleTimingUpdater.class), //
 					getter.getModal(Fleet.class), //
 					amConfig.assignmentInterval, //
-					getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(), //
+					getter.getModal(QsimScopeForkJoinPool.class).getPool(), //
 					getter.getModal(LeastCostPathCalculator.class), //
 					getter.getModal(TravelTime.class), //
 					getter.getModal(InformationCollector.class) //
