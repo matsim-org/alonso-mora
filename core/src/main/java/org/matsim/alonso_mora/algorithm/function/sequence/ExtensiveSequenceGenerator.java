@@ -31,6 +31,7 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
 
     private boolean finished = false;
 
+    private final int numberOfRequests;
 
     private boolean isStopsCacheValid = false;
     private List<AlonsoMoraStop> stopsCache;
@@ -73,11 +74,11 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
             stops.add(new AlonsoMoraStop(StopType.Dropoff, request.getDropoffLink(), request));
             stopIndex++;
 
-			requestIndex++;
-		}
-
-		internalAdvance(false);
-	}
+            requestIndex++;
+        }
+        numberOfRequests = requestIndex;
+        internalAdvance(false);
+    }
 
     private void invalidateStopsCache() {
         this.isStopsCacheValid = false;
@@ -110,9 +111,9 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
         invalidateStopsCache();
     }
 
-	void internalAbort() {
-		while (currentIndex > 0) {
-			currentIndex--;
+    void internalAbort() {
+        while (currentIndex > 0) {
+            currentIndex--;
 
             if (currentSequence[currentIndex] < sequenceLength - 1) {
                 currentSequence[currentIndex]++;
@@ -127,33 +128,36 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
             return;
         }
 
-		finished = true;
-	}
+        finished = true;
+    }
 
 	boolean isFeasible() {
-		Set<Integer> pickedUp = new HashSet<>(onboardIndices);
-		Set<Integer> droppedOff = new HashSet<>();
+        BitSet pickedUp = new BitSet(numberOfRequests);
+        for(int onboardIndex : onboardIndices) {
+            pickedUp.set(onboardIndex);
+        }
+        BitSet droppedOff = new BitSet(numberOfRequests);
 
-		for (int i = 0; i <= currentIndex; i++) {
-			int stopIndex = currentSequence[i];
-			int requestIndex = requestIndices[stopIndex];
+        for (int i = 0; i <= currentIndex; i++) {
+            int stopIndex = currentSequence[i];
+            int requestIndex = requestIndices[stopIndex];
 
-			if (pickupIndices[stopIndex]) {
-				if (pickedUp.contains(requestIndex)) {
-					return false;
-				} else {
-					pickedUp.add(requestIndex);
-				}
-			} else {
-				if (droppedOff.contains(requestIndex)) {
-					return false;
-				} else if (pickedUp.contains(requestIndex)) {
-					droppedOff.add(requestIndex);
-				} else {
-					return false;
-				}
-			}
-		}
+            if (pickupIndices[stopIndex]) {
+                if (pickedUp.get(requestIndex)) {
+                    return false;
+                } else {
+                    pickedUp.set(requestIndex);
+                }
+            } else {
+                if (droppedOff.get(requestIndex)) {
+                    return false;
+                } else if (pickedUp.get(requestIndex)) {
+                    droppedOff.set(requestIndex);
+                } else {
+                    return false;
+                }
+            }
+        }
 
         return true;
 	}
