@@ -95,16 +95,20 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
         internalAdvance(false);
     }
 
-	void internalAdvance(boolean dropCurrent) {
-		while (!finished && (!isFeasible() || dropCurrent)) {
-			if (currentIndex < sequenceLength - 1 && isFeasible()) {
-				currentIndex++;
-				currentSequence[currentIndex] = 0;
-			} else if (currentSequence[currentIndex] < sequenceLength - 1) {
-				currentSequence[currentIndex]++;
-			} else {
-				internalAbort();
-			}
+    void internalAdvance(boolean dropCurrent) {
+        Boolean isFeasibleValue = null; // to avoid calling isFeasible twice in the two lines below
+        while (!finished && (dropCurrent || !(isFeasibleValue = isFeasible()))) {
+            if(currentIndex < sequenceLength - 1 && isFeasibleValue == null) {
+                isFeasibleValue = isFeasible();
+            }
+            if (currentIndex < sequenceLength - 1 && isFeasibleValue) {
+                currentIndex++;
+                currentSequence[currentIndex] = 0;
+            } else if (currentSequence[currentIndex] < sequenceLength - 1) {
+                currentSequence[currentIndex]++;
+            } else {
+                internalAbort();
+            }
 
             dropCurrent = false;
         }
