@@ -26,7 +26,7 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
 	private int[] requestIndices;
 	private boolean[] pickupIndices;
 
-    private final List<AlonsoMoraStop> stops;
+    private final AlonsoMoraStop[] stops;
     private Set<Integer> onboardIndices = new HashSet<>();
 
     private boolean finished = false;
@@ -47,7 +47,7 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
         this.requestIndices = new int[sequenceLength];
         this.pickupIndices = new boolean[sequenceLength];
 
-        this.stops = new ArrayList<>(this.sequenceLength);
+        this.stops = new AlonsoMoraStop[this.sequenceLength];
 
         int requestIndex = 0;
         int stopIndex = 0;
@@ -57,7 +57,7 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
 
             requestIndices[stopIndex] = requestIndex;
             pickupIndices[stopIndex] = false;
-            stops.add(new AlonsoMoraStop(StopType.Dropoff, request.getDropoffLink(), request));
+            stops[stopIndex] = new AlonsoMoraStop(StopType.Dropoff, request.getDropoffLink(), request);
             stopIndex++;
 
             requestIndex++;
@@ -66,12 +66,12 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
         for (AlonsoMoraRequest request : requests) {
             requestIndices[stopIndex] = requestIndex;
             pickupIndices[stopIndex] = true;
-            stops.add(new AlonsoMoraStop(StopType.Pickup, request.getPickupLink(), request));
+            stops[stopIndex] = new AlonsoMoraStop(StopType.Pickup, request.getPickupLink(), request);
             stopIndex++;
 
             requestIndices[stopIndex] = requestIndex;
             pickupIndices[stopIndex] = false;
-            stops.add(new AlonsoMoraStop(StopType.Dropoff, request.getDropoffLink(), request));
+            stops[stopIndex] = new AlonsoMoraStop(StopType.Dropoff, request.getDropoffLink(), request);
             stopIndex++;
 
             requestIndex++;
@@ -179,8 +179,13 @@ public class ExtensiveSequenceGenerator implements SequenceGenerator {
     @Override
     public List<AlonsoMoraStop> get() {
         if (!this.isStopsCacheValid) {
-            this.stopsCache = IntStream.of(currentSequence).limit(currentIndex + 1).mapToObj(i -> stops.get(i))
-                    .collect(Collectors.toList());
+            this.stopsCache = new LinkedList<>();
+            for(int i=0; i<currentSequence.length; i++) {
+                this.stopsCache.add(stops[currentSequence[i]]);
+                if (i==currentIndex) {
+                    break;
+                }
+            }
             this.isStopsCacheValid = true;
         }
         return this.stopsCache;
