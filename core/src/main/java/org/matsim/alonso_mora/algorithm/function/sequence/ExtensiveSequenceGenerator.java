@@ -1,8 +1,6 @@
 package org.matsim.alonso_mora.algorithm.function.sequence;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.matsim.alonso_mora.algorithm.AlonsoMoraRequest;
 import org.matsim.alonso_mora.algorithm.AlonsoMoraStop;
@@ -11,7 +9,7 @@ import org.matsim.alonso_mora.algorithm.AlonsoMoraVehicle;
 
 /**
  * The extensive sequence generator as described by Alonso-Mora et al.
- * <p>
+ *
  * The generator loops through all possible combinations of pickup and dropoff
  * stops given the onboard and new requests for the vehicle.
  *
